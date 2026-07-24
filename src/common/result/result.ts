@@ -15,9 +15,9 @@ export class Result<T> {
     static success<T>(value: T, status: HttpStatus = HttpStatus.OK): Result<T> {
         return new Result(value as T, true, [], status);
     }
-
-    static ok<T>(): Result<T> {
-        return new Result(null as T, true, [], HttpStatus.OK);
+    
+    static ok<T>(value?: T): Result<T> {
+        return new Result(value ?? (null as unknown as T), true, [], HttpStatus.OK);
     }
 
     static created<T>(value: T): Result<T> {
