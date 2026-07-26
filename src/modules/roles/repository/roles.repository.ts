@@ -169,4 +169,14 @@ export class RoleRepository implements IRoleRepository {
         return deleted.length > 0;
     }
 
+    async existsByName(name: string): Promise<boolean> {
+        const [existingRole] = await this.database.connection
+            .select({ id: roles.id }) 
+            .from(roles)
+            .where(eq(roles.name, name))
+            .limit(1); 
+
+        return !!existingRole;
+    }
+    
 }

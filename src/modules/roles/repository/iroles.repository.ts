@@ -13,4 +13,6 @@ export abstract class IRoleRepository {
     abstract findById(id: string): Promise<Role | null>;
 
     abstract create(Role: Role): Promise<Role>;
+
+    abstract existsByName(name: string): Promise<boolean>;
 }
