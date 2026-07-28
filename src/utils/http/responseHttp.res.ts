@@ -13,6 +13,8 @@ export class ResponseHTTP<T> {
   @ApiProperty({ example: 'POST' })
   method: string;
 
+  message?: string
+
   @ApiProperty({ example: 'uuid-of-request' })
   traceId: string;
 
