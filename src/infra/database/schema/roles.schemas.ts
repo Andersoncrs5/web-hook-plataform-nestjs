@@ -20,7 +20,7 @@ export const roles = pgTable("roles", {
     length: 255
   }),
 
-  isActive: boolean("is_active").default(true).notNull(),
+  isActive: boolean("is_active").notNull().default(true).notNull(),
 
   version: integer("version").default(0).notNull(),
 
