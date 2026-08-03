@@ -9,12 +9,12 @@ import {
 import { users } from "./user.schema";
 import { roles } from "./roles.schemas";
 
+import { BaseSchema, idPattern, createdAtPattern, updatedAtPattern, versionPattern, deletedAtPattern } from "../schema-helpers";
+
 export const userRoles = pgTable(
   "user_roles",
   {
-    id: uuid("id")
-      .defaultRandom()
-      .primaryKey(),
+    ...idPattern, 
 
     userId: uuid("user_id")
       .notNull()
@@ -24,13 +24,10 @@ export const userRoles = pgTable(
       .notNull()
       .references(() => roles.id, { onDelete: "cascade" }),
 
-    version: integer("version")
-      .default(0)
-      .notNull(),
-
-    createdAt: timestamp("created_at")
-      .defaultNow()
-      .notNull(),
+    ...versionPattern,
+    ...createdAtPattern,
+    ...updatedAtPattern,
+    ...deletedAtPattern,
   },
   (table) => [
     uniqueIndex("uk_user_roles_user_id_role_id").on(table.userId, table.roleId),
@@ -38,3 +35,7 @@ export const userRoles = pgTable(
     index("idx_user_roles_role_id_user_id").on(table.roleId, table.userId),
   ]
 );
+
+export class UserRolesSchema extends BaseSchema {
+  readonly table = userRoles
+}
