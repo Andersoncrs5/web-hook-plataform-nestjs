@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { FastifyRequest } from 'fastify';
+import { FastifyRequest, FastifyReply } from 'fastify';
 import { getRequestId } from '../http/request-id';
 import { ResponseHTTP } from '../http/responseHttp.res';
 
@@ -19,7 +19,13 @@ export class TransformInterceptor<T> implements NestInterceptor<
     context: ExecutionContext,
     next: CallHandler,
   ): Observable<ResponseHTTP<T>> {
-    const request = context.switchToHttp().getRequest<FastifyRequest>();
+    const ctx = context.switchToHttp();
+    const request = ctx.getRequest<FastifyRequest>();
+    const response = ctx.getResponse<FastifyReply>(); 
+
+    const statusCode = response.statusCode;
+    
+    const isSuccess = statusCode >= 200 && statusCode < 300;
 
     return next.handle().pipe(
       map((data: T) => ({
@@ -28,8 +34,7 @@ export class TransformInterceptor<T> implements NestInterceptor<
         path: request.url,
         method: request.method,
         traceId: getRequestId(request),
-        message: 'Operação realizada com sucesso',
-        status: true,
+        status: isSuccess
       })),
     );
   }
