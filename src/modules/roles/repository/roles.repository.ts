@@ -8,6 +8,7 @@ import {
     eq,
     gte,
     ilike,
+    inArray,
     lte,
 } from "drizzle-orm";
 
@@ -28,6 +29,18 @@ export class RoleRepository implements IRoleRepository {
     constructor(
         private readonly database: DatabaseService,
     ) {}
+
+    async findByIds(ids: string[], limit: number = 50): Promise<Role[]> {
+        if (!ids || ids.length === 0) {
+            return [];
+        }
+
+        return await this.database.connection
+            .select()
+            .from(roles)
+            .where(inArray(roles.id, ids))
+            .limit(limit);
+    }
 
     async findAll(
         filter: RoleFilter,
@@ -127,7 +140,8 @@ export class RoleRepository implements IRoleRepository {
         const [role] = await this.database.connection
             .select()
             .from(roles)
-            .where(eq(roles.id, id));
+            .where(eq(roles.id, id))
+            .limit(1);
 
         return role ? RoleMapper.toDomain(role) : null;
     }

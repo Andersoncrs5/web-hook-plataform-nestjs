@@ -15,4 +15,6 @@ export abstract class IRoleRepository {
     abstract create(Role: Role): Promise<Role>;
 
     abstract existsByName(name: string): Promise<boolean>;
+
+    abstract findByIds(ids: string[], limit: number): Promise<Role[]>;
 }
