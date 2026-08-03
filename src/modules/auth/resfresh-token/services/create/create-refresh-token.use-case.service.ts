@@ -7,6 +7,7 @@ import * as argon2 from "argon2";
 import { RefreshTokenRepository } from "../../repository/refresh-token.repository";
 import { Result } from "src/common/result/result";
 import { RefreshToken } from "../../entities/refresh-token.entity";
+import { isUUID } from "class-validator";
 
 @Injectable()
 export class CreateRefreshTokenService {
@@ -18,6 +19,8 @@ export class CreateRefreshTokenService {
 
     async execute(userId: string): Promise<Result<RefreshToken>> {
         try {
+            if (!isUUID(userId)) return Result.badRequest('Id should be a UUID');
+
             const expirationHours = this.configService.getOrThrow<number>("REFRESH_TOKEN_EXP_HOUR");
 
             const refreshToken = new RefreshToken();

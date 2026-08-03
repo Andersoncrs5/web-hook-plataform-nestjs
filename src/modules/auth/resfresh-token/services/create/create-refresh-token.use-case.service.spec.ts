@@ -7,13 +7,11 @@ import { CreateRefreshTokenService } from "./create-refresh-token.use-case.servi
 import { RefreshTokenRepository } from "../../repository/refresh-token.repository";
 import { RefreshToken } from "../../entities/refresh-token.entity";
 
-// Mock do argon2 para testes unitários rápidos e seguros
 jest.mock("argon2", () => ({
     hash: jest.fn().mockResolvedValue("$argon2id$v=19$m=65536,t=3,p=4$mocked_hash"),
 }));
 
 describe("CreateRefreshTokenService ( UnitTest )", () => {
-
     let service: CreateRefreshTokenService;
     let repository: jest.Mocked<RefreshTokenRepository>;
     let configService: jest.Mocked<ConfigService>;
@@ -26,29 +24,24 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
         getOrThrow: jest.fn(),
     };
 
-    const fakeUserId = "user-uuid-1234-5678";
+    const validUuid = "123e4567-e89b-12d3-a456-426614174000";
 
     beforeEach(async () => {
+        const module: TestingModule = await Test.createTestingModule({
+            providers: [
+                CreateRefreshTokenService,
+                {
+                    provide: RefreshTokenRepository,
+                    useValue: mockRepository,
+                },
+                {
+                    provide: ConfigService,
+                    useValue: mockConfigService,
+                },
+            ],
+        }).compile();
 
-        const module: TestingModule =
-            await Test.createTestingModule({
-                providers: [
-                    CreateRefreshTokenService,
-                    {
-                        provide: RefreshTokenRepository,
-                        useValue: mockRepository,
-                    },
-                    {
-                        provide: ConfigService,
-                        useValue: mockConfigService,
-                    },
-                ],
-            }).compile();
-
-        service = module.get<CreateRefreshTokenService>(
-            CreateRefreshTokenService,
-        );
-
+        service = module.get<CreateRefreshTokenService>(CreateRefreshTokenService);
         repository = module.get(RefreshTokenRepository);
         configService = module.get(ConfigService);
     });
@@ -65,15 +58,13 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
     });
 
     describe("execute", () => {
-
         it("should successfully create a refresh token (Happy Path)", async () => {
-
             repository.create.mockImplementation(
                 async (token: RefreshToken) => token,
             );
 
             const before = Date.now();
-            const result = await service.execute(fakeUserId);
+            const result = await service.execute(validUuid);
             const after = Date.now();
 
             expect(result).toBeDefined();
@@ -84,7 +75,7 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
             const createdToken = repository.create.mock.calls[0][0];
 
             expect(createdToken).toBeInstanceOf(RefreshToken);
-            expect(createdToken.userId).toBe(fakeUserId);
+            expect(createdToken.userId).toBe(validUuid);
             expect(createdToken.tokenHash).toBeDefined();
             expect(createdToken.tokenHash.length).toBeGreaterThan(0);
 
@@ -108,11 +99,11 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
                 async (token: RefreshToken) => token,
             );
 
-            await service.execute(fakeUserId);
+            await service.execute(validUuid);
 
             expect(repository.create).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    userId: fakeUserId,
+                    userId: validUuid,
                 }),
             );
         });
@@ -122,7 +113,7 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
                 async (token: RefreshToken) => token,
             );
 
-            await service.execute(fakeUserId);
+            await service.execute(validUuid);
 
             const createdToken = repository.create.mock.calls[0][0];
 
@@ -138,7 +129,7 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
             );
 
             const before = Date.now();
-            await service.execute(fakeUserId);
+            await service.execute(validUuid);
             const after = Date.now();
 
             const createdToken = repository.create.mock.calls[0][0];
@@ -153,8 +144,17 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
                 .toBeLessThanOrEqual(expectedMax + 1000);
         });
 
-        describe("Database Constraint Violations (Sad Paths)", () => {
+        describe("Validation Rules (Sad Paths)", () => {
+            it("should return bad request when userId is not a valid UUID", async () => {
+                const result = await service.execute("not-a-valid-uuid");
 
+                expect(result.isSuccess).toBe(false);
+                expect(result.errors[0]).toBe("Id should be a UUID");
+                expect(repository.create).not.toHaveBeenCalled();
+            });
+        });
+
+        describe("Database Constraint Violations (Sad Paths)", () => {
             it("should return conflict when token hash already exists (23505)", async () => {
                 const dbError = {
                     code: "23505",
@@ -163,7 +163,7 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
 
                 repository.create.mockRejectedValue(dbError);
 
-                const result = await service.execute(fakeUserId);
+                const result = await service.execute(validUuid);
 
                 expect(result.isSuccess).toBe(false);
                 expect(result.errors[0]).toBe("Token hash already exists.");
@@ -178,7 +178,7 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
 
                 repository.create.mockRejectedValue(dbError);
 
-                const result = await service.execute(fakeUserId);
+                const result = await service.execute(validUuid);
 
                 expect(result.isSuccess).toBe(false);
                 expect(result.errors[0]).toBe("Data conflict detected.");
@@ -192,7 +192,7 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
 
                 repository.create.mockRejectedValue(dbError);
 
-                const result = await service.execute(fakeUserId);
+                const result = await service.execute(validUuid);
 
                 expect(result.isSuccess).toBe(false);
                 expect(result.errors[0]).toBe('The field "user_id" cannot be null.');
@@ -205,7 +205,7 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
 
                 repository.create.mockRejectedValue(dbError);
 
-                const result = await service.execute(fakeUserId);
+                const result = await service.execute(validUuid);
 
                 expect(result.isSuccess).toBe(false);
                 expect(result.errors[0]).toBe('The field "unknown field" cannot be null.');
@@ -218,7 +218,7 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
 
                 repository.create.mockRejectedValue(dbError);
 
-                const result = await service.execute(fakeUserId);
+                const result = await service.execute(validUuid);
 
                 expect(result.isSuccess).toBe(false);
                 expect(result.errors[0]).toBe(
@@ -233,7 +233,7 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
 
                 repository.create.mockRejectedValue(dbError);
 
-                const result = await service.execute(fakeUserId);
+                const result = await service.execute(validUuid);
 
                 expect(result.isSuccess).toBe(false);
                 expect(result.errors[0]).toBe("The referenced user does not exist.");
@@ -246,7 +246,7 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
 
                 repository.create.mockRejectedValue(dbError);
 
-                const result = await service.execute(fakeUserId);
+                const result = await service.execute(validUuid);
 
                 expect(result.isSuccess).toBe(false);
                 expect(result.errors[0]).toBe("Refresh token data violates a database constraint.");
@@ -259,7 +259,7 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
 
                 repository.create.mockRejectedValue(dbError);
 
-                const result = await service.execute(fakeUserId);
+                const result = await service.execute(validUuid);
 
                 expect(result.isSuccess).toBe(false);
                 expect(result.errors[0]).toBe("Invalid refresh token data.");
@@ -270,35 +270,30 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
 
                 repository.create.mockRejectedValue(unknownError);
 
-                await expect(service.execute(fakeUserId)).rejects.toThrow(
+                await expect(service.execute(validUuid)).rejects.toThrow(
                     InternalServerErrorException,
                 );
 
-                await expect(service.execute(fakeUserId)).rejects.toThrow(
+                await expect(service.execute(validUuid)).rejects.toThrow(
                     "Error creating user.",
                 );
 
                 expect(repository.create).toHaveBeenCalledTimes(2);
             });
-
         });
 
         describe("Configuration Errors", () => {
-
             it("should throw InternalServerErrorException when configuration fails", async () => {
                 configService.getOrThrow.mockImplementation(() => {
                     throw new Error("REFRESH_TOKEN_EXP_HOUR is not configured");
                 });
 
-                await expect(service.execute(fakeUserId)).rejects.toThrow(
+                await expect(service.execute(validUuid)).rejects.toThrow(
                     InternalServerErrorException,
                 );
 
                 expect(repository.create).not.toHaveBeenCalled();
             });
-
         });
-
     });
-
 });
