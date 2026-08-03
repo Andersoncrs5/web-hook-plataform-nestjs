@@ -118,4 +118,11 @@ export class Result<T> {
     orElseResult(fn: () => Result<T>): Result<T> {
         return this.isSuccess ? this : fn();
     }
+
+    unwrapOr<R>(fn: (result: Result<T>) => R): T | R {
+        if (this.isFailure) {
+            return fn(this);
+        }
+        return this._value as T;
+    }
 }
