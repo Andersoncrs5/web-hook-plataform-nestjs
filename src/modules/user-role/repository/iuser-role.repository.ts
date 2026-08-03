@@ -16,4 +16,6 @@ export abstract class IUserRoleRepository {
 
     abstract existsByRoleIdAndUserId(roleId: string, userId: string): Promise<boolean>;
 
+    abstract findAllByUserIdJustRoleId(userId: string): Promise<string[]>;
+
 }

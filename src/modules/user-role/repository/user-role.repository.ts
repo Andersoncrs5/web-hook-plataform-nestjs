@@ -20,6 +20,15 @@ export class UserRoleRepository implements IUserRoleRepository {
         private readonly database: DatabaseService,
     ) {}
 
+    async findAllByUserIdJustRoleId(userId: string): Promise<string[]> {
+        const rows = await this.database.connection
+            .select({ id: userRoles.roleId })
+            .from(userRoles)
+            .where(eq(userRoles.userId, userId));
+
+        return rows.map((row) => row.id);
+    }
+    
     async existsByRoleIdAndUserId(roleId: string, userId: string): Promise<boolean> {
         const [existingUserRole] = await this.database.connection
             .select({ id: userRoles.id })
