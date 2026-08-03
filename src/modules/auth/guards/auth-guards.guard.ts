@@ -7,7 +7,7 @@ import {ConfigService} from "@nestjs/config";
 @Injectable()
 export class JwtGuard implements CanActivate {
     constructor(
-        private jwtService: JwtService,
+        private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
     ) {
     }
