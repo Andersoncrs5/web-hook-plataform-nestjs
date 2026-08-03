@@ -8,6 +8,7 @@ import {
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { BaseSchema, idPattern, createdAtPattern, deletedAtPattern, updatedAtPattern, versionPattern } from "../schema-helpers";
 
 export const inboxStatus = pgEnum(
   "inbox_status", 
@@ -20,9 +21,7 @@ export const inboxStatus = pgEnum(
 
 export const inbox = pgTable("inbox", {
 
-  id: uuid("id")
-    .defaultRandom()
-    .primaryKey(),
+  ...idPattern,
 
   source: varchar("source", {
     length: 100,
@@ -43,9 +42,9 @@ export const inbox = pgTable("inbox", {
 
   processedAt: timestamp("processed_at"),
 
-  createdAt: timestamp("created_at")
-    .defaultNow()
-    .notNull(),
+  ...createdAtPattern,
+  ...versionPattern,
+  ...updatedAtPattern,
 
 }, (table) => [
   uniqueIndex("uk_inbox_source_message_id").on(table.source, table.messageId),
