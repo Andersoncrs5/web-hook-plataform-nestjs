@@ -25,13 +25,11 @@ export const inbox = pgTable("inbox", {
 
   source: varchar("source", {
     length: 100,
-  })
-    .notNull(),
+  }).notNull(),
 
   messageId: varchar("message_id", {
     length: 255,
-  })
-    .notNull(),
+  }).notNull(),
 
   payload: jsonb("payload")
     .notNull(),
@@ -50,3 +48,8 @@ export const inbox = pgTable("inbox", {
   uniqueIndex("uk_inbox_source_message_id").on(table.source, table.messageId),
   index("idx_inbox_status_created_at").on(table.status, table.createdAt),
 ]);
+
+
+export class InboxSchema extends BaseSchema {
+  readonly table = inbox;
+}

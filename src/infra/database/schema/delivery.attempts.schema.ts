@@ -9,7 +9,7 @@ import {
   index,
   uniqueIndex
 } from "drizzle-orm/pg-core";
-import { deliveries } from "./deliveries.schema";
+import { deliveriesTable } from "./deliveries.schema";
 
 export const deliveryAttempts = pgTable("delivery_attempts", {
 
@@ -19,7 +19,7 @@ export const deliveryAttempts = pgTable("delivery_attempts", {
 
   deliveryId: uuid("delivery_id")
     .notNull()
-    .references(() => deliveries.id, { onDelete: 'cascade' }),
+    .references(() => deliveriesTable.id, { onDelete: 'cascade' }),
 
   attempt: integer("attempt")
     .notNull(),

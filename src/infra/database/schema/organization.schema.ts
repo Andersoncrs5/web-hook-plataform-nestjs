@@ -9,6 +9,14 @@ import {
   index,
 } from "drizzle-orm/pg-core";
 import { users } from "./user.schema";
+import {
+  BaseSchema,
+  idPattern,
+  createdAtPattern,
+  updatedAtPattern,
+  versionPattern,
+  deletedAtPattern,
+} from "../schema-helpers";
 
 export const organizationStatus = pgEnum(
   "organization_status",
@@ -21,9 +29,7 @@ export const organizationStatus = pgEnum(
 
 export const organizations = pgTable("organizations", {
 
-  id: uuid("id")
-    .defaultRandom()
-    .primaryKey(),
+  ...idPattern,
 
   name: varchar("name", {
     length: 150
@@ -32,10 +38,6 @@ export const organizations = pgTable("organizations", {
   slug: varchar("slug", {
     length: 100
   }).notNull().unique('uk_slug_organization'),
-
-  version: integer("version")
-    .default(0)
-    .notNull(),
 
   status: organizationStatus("status") 
     .default("ACTIVE")
@@ -47,15 +49,10 @@ export const organizations = pgTable("organizations", {
 
   metadata: jsonb("metadata"),
 
-  createdAt: timestamp("created_at")
-    .defaultNow()
-    .notNull(),
-
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .notNull(),
-
-  deletedAt: timestamp("deleted_at"),
+  ...versionPattern,
+    ...createdAtPattern,
+    ...updatedAtPattern,
+    ...deletedAtPattern,
 
 }, (table) => [
   index("idx_organizations_slug").on(table.slug),

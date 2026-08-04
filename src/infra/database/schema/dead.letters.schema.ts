@@ -7,7 +7,7 @@ import {
   index,
   uniqueIndex
 } from "drizzle-orm/pg-core";
-import { deliveries } from "./deliveries.schema"; 
+import { deliveriesTable } from "./deliveries.schema"; 
 
 export const deadLetters = pgTable("dead_letters", {
 
@@ -17,7 +17,7 @@ export const deadLetters = pgTable("dead_letters", {
 
   deliveryId: uuid("delivery_id")
     .notNull()
-    .references(() => deliveries.id, { onDelete: 'cascade' }),
+    .references(() => deliveriesTable.id, { onDelete: 'cascade' }),
 
   reason: text("reason")
     .notNull(),
