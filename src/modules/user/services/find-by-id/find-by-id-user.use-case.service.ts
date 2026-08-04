@@ -4,7 +4,7 @@ import { Result } from "src/common/result/result";
 import { User } from "../../entities/user.entity";
 
 @Injectable()
-export class FindByIdUserUseCase {
+export class FindUserByIdUserUseCase {
     constructor(
         private readonly userRepository: IUserRepository,
     ) {}

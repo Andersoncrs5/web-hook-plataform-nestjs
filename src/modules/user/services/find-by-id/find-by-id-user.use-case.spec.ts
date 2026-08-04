@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { FindByIdUserUseCase } from './find-by-id-user.use-case.service';
+import { FindUserByIdUserUseCase } from './find-by-id-user.use-case.service';
 import { IUserRepository } from '../../repository/iuser.repository';
 import { User } from '../../entities/user.entity';
 
 describe('FindByIdUserUseCase ( UnitTest )', () => {
-    let service: FindByIdUserUseCase;
+    let service: FindUserByIdUserUseCase;
     let userRepository: jest.Mocked<IUserRepository>;
 
     const mockIUserRepository = {
@@ -24,7 +24,7 @@ describe('FindByIdUserUseCase ( UnitTest )', () => {
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
-                FindByIdUserUseCase,
+                FindUserByIdUserUseCase,
                 {
                     provide: IUserRepository,
                     useValue: mockIUserRepository,
@@ -32,7 +32,7 @@ describe('FindByIdUserUseCase ( UnitTest )', () => {
             ],
         }).compile();
 
-        service = module.get<FindByIdUserUseCase>(FindByIdUserUseCase);
+        service = module.get<FindUserByIdUserUseCase>(FindUserByIdUserUseCase);
         userRepository = module.get(IUserRepository);
     });
 
