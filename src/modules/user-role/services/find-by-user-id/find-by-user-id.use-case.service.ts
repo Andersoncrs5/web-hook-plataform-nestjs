@@ -4,7 +4,7 @@ import { Result } from "src/common/result/result";
 import { isUUID } from "class-validator";
 
 @Injectable()
-export class FindUserRoleByUserIdUseCase {
+export class FindUserRoleByUserIdJustRoleIdUseCase {
     constructor(
         private readonly repository: IUserRoleRepository,
     ) {}

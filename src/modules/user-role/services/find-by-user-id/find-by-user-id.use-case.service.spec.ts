@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { IUserRoleRepository } from '../../repository/iuser-role.repository';
-import { FindUserRoleByUserIdUseCase } from './find-by-user-id.use-case.service';
+import { FindUserRoleByUserIdJustRoleIdUseCase } from './find-by-user-id.use-case.service';
 
 describe('FindUserRoleByUserIdUseCase ( UnitTest )', () => {
-    let service: FindUserRoleByUserIdUseCase;
+    let service: FindUserRoleByUserIdJustRoleIdUseCase;
     let repository: jest.Mocked<IUserRoleRepository>;
 
     const mockIUserRoleRepository = {
@@ -15,7 +15,7 @@ describe('FindUserRoleByUserIdUseCase ( UnitTest )', () => {
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
-                FindUserRoleByUserIdUseCase,
+                FindUserRoleByUserIdJustRoleIdUseCase,
                 {
                     provide: IUserRoleRepository,
                     useValue: mockIUserRoleRepository,
@@ -23,7 +23,7 @@ describe('FindUserRoleByUserIdUseCase ( UnitTest )', () => {
             ],
         }).compile();
 
-        service = module.get<FindUserRoleByUserIdUseCase>(FindUserRoleByUserIdUseCase);
+        service = module.get<FindUserRoleByUserIdJustRoleIdUseCase>(FindUserRoleByUserIdJustRoleIdUseCase);
         repository = module.get(IUserRoleRepository);
     });
 
