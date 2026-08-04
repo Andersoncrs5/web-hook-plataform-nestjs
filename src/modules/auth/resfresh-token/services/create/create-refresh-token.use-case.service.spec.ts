@@ -5,7 +5,7 @@ import * as argon2 from "argon2";
 
 import { CreateRefreshTokenService } from "./create-refresh-token.use-case.service";
 import { RefreshTokenRepository } from "../../repository/refresh-token.repository";
-import { RefreshToken } from "../../entities/refresh-token.entity";
+import { RefreshTokenEntity } from "../../entities/refresh-token.entity";
 
 jest.mock("argon2", () => ({
     hash: jest.fn().mockResolvedValue("$argon2id$v=19$m=65536,t=3,p=4$mocked_hash"),
@@ -60,7 +60,7 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
     describe("execute", () => {
         it("should successfully create a refresh token (Happy Path)", async () => {
             repository.create.mockImplementation(
-                async (token: RefreshToken) => token,
+                async (token: RefreshTokenEntity) => token,
             );
 
             const before = Date.now();
@@ -74,7 +74,7 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
 
             const createdToken = repository.create.mock.calls[0][0];
 
-            expect(createdToken).toBeInstanceOf(RefreshToken);
+            expect(createdToken).toBeInstanceOf(RefreshTokenEntity);
             expect(createdToken.userId).toBe(validUuid);
             expect(createdToken.tokenHash).toBeDefined();
             expect(createdToken.tokenHash.length).toBeGreaterThan(0);
@@ -96,7 +96,7 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
 
         it("should create the refresh token for the provided user", async () => {
             repository.create.mockImplementation(
-                async (token: RefreshToken) => token,
+                async (token: RefreshTokenEntity) => token,
             );
 
             await service.execute(validUuid);
@@ -110,7 +110,7 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
 
         it("should generate an Argon2 hash", async () => {
             repository.create.mockImplementation(
-                async (token: RefreshToken) => token,
+                async (token: RefreshTokenEntity) => token,
             );
 
             await service.execute(validUuid);
@@ -125,7 +125,7 @@ describe("CreateRefreshTokenService ( UnitTest )", () => {
 
             configService.getOrThrow.mockReturnValue(expirationHours);
             repository.create.mockImplementation(
-                async (token: RefreshToken) => token,
+                async (token: RefreshTokenEntity) => token,
             );
 
             const before = Date.now();

@@ -2,7 +2,7 @@ import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common
 import { IRefreshTokenRepository } from "../../repository/irefresh-token.repository";
 import { isUUID } from "class-validator";
 import { Result } from "src/common/result/result";
-import { RefreshToken } from "../../entities/refresh-token.entity";
+import { RefreshTokenEntity } from "../../entities/refresh-token.entity";
 
 @Injectable()
 export class RevokeRefreshTokenUseCase {
@@ -36,7 +36,7 @@ export class RevokeRefreshTokenUseCase {
 
             token.revokedAt = dateNow;
 
-            const tokenUpdated: RefreshToken = await this.repository.update(token);
+            const tokenUpdated: RefreshTokenEntity = await this.repository.update(token);
 
             return Result.ok(tokenUpdated);
         } catch (error) {

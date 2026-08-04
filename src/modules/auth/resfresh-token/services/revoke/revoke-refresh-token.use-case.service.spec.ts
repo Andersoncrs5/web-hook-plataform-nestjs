@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { InternalServerErrorException } from '@nestjs/common';
 import { RevokeRefreshTokenUseCase } from './revoke-refresh-token.use-case.service';
 import { IRefreshTokenRepository } from '../../repository/irefresh-token.repository';
-import { RefreshToken } from '../../entities/refresh-token.entity';
+import { RefreshTokenEntity } from '../../entities/refresh-token.entity';
 import { RefreshTokenStatus } from 'src/common/enums/refresh-token/refresh-token-status.enum';
 
 describe('RevokeRefreshTokenUseCase ( UnitTest - Complete )', () => {
@@ -16,13 +16,12 @@ describe('RevokeRefreshTokenUseCase ( UnitTest - Complete )', () => {
 
     const validUuid = '123e4567-e89b-12d3-a456-426614174000';
 
-    // Função utilitária para criar tokens válidos e limpos
-    const createBaseRefreshToken = (): RefreshToken => {
-        return Object.assign(new RefreshToken(), {
+    const createBaseRefreshToken = (): RefreshTokenEntity => {
+        return Object.assign(new RefreshTokenEntity(), {
             id: validUuid,
             userId: 'user-uuid-5678',
             tokenHash: 'some-token-hash-value',
-            expiresAt: new Date(Date.now() + 86400000), // Expirando amanhã
+            expiresAt: new Date(Date.now() + 86400000), 
             revokedAt: null,
             createdAt: new Date(),
             status: RefreshTokenStatus.ACTIVE,
@@ -69,9 +68,9 @@ describe('RevokeRefreshTokenUseCase ( UnitTest - Complete )', () => {
 
             expect(result).toBeDefined();
             expect(result.isSuccess).toBe(true);
-            expect(result.value).toBeInstanceOf(RefreshToken);
+            expect(result.value).toBeInstanceOf(RefreshTokenEntity);
 
-            if (!(result.value instanceof RefreshToken))
+            if (!(result.value instanceof RefreshTokenEntity))
                 throw new InternalServerErrorException()
 
             const revokedTime = result.value.revokedAt!.getTime();

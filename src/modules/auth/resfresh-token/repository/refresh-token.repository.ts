@@ -5,8 +5,11 @@ import { DatabaseService } from "src/infra/database/database.service";
 import { refreshTokens } from "src/infra/database/schema/refresh.tokens.schema";
 
 import { IRefreshTokenRepository } from "./irefresh-token.repository";
-import { RefreshToken } from "../entities/refresh-token.entity";
+import { RefreshTokenEntity } from "../entities/refresh-token.entity";
 import { RefreshTokenMapper } from "../mapper/refresh-token.mapper";
+import { users } from "src/infra/database/schema/user.schema";
+import { User } from "src/modules/user/entities/user.entity";
+import { UserMapper } from "src/modules/user/mapper/user.mapper";
 
 @Injectable()
 export class RefreshTokenRepository implements IRefreshTokenRepository {
@@ -24,7 +27,7 @@ export class RefreshTokenRepository implements IRefreshTokenRepository {
         return result.length;
     }
     
-    async create(token: RefreshToken): Promise<RefreshToken> {
+    async create(token: RefreshTokenEntity): Promise<RefreshTokenEntity> {
 
         const [created] = await this.database.connection
             .insert(refreshTokens)
@@ -37,7 +40,7 @@ export class RefreshTokenRepository implements IRefreshTokenRepository {
         return RefreshTokenMapper.toDomain(created);
     }
 
-    async update(token: RefreshToken): Promise<RefreshToken> {
+    async update(token: RefreshTokenEntity): Promise<RefreshTokenEntity> {
 
         const [updated] = await this.database.connection
             .update(refreshTokens)
@@ -53,7 +56,7 @@ export class RefreshTokenRepository implements IRefreshTokenRepository {
         return RefreshTokenMapper.toDomain(updated);
     }
 
-    async findById(id: string): Promise<RefreshToken | null> {
+    async findById(id: string): Promise<RefreshTokenEntity | null> {
 
         const [token] = await this.database.connection
             .select()
@@ -66,7 +69,46 @@ export class RefreshTokenRepository implements IRefreshTokenRepository {
             : null;
     }
 
-    async findByTokenHash(tokenHash: string): Promise<RefreshToken | null> {
+    async findByTokenHashWithUser(
+        tokenHash: string,
+    ): Promise<{
+        refreshToken: RefreshTokenEntity;
+        user: User;
+    } | null> {
+
+        const [result] = await this.database.connection
+            .select({
+                refreshToken: refreshTokens,
+                user: users,
+            })
+            .from(refreshTokens)
+            .innerJoin(
+                users,
+                eq(refreshTokens.userId, users.id),
+            )
+            .where(
+                and(
+                    eq(refreshTokens.tokenHash, tokenHash),
+                    isNull(refreshTokens.revokedAt),
+                    gt(refreshTokens.expiresAt, new Date()),
+                ),
+            );
+
+        if (!result) {
+            return null;
+        }
+
+        return {
+            refreshToken: RefreshTokenMapper.toDomain(
+                result.refreshToken,
+            ),
+            user: UserMapper.toDomain(
+                result.user,
+            ),
+        };
+    }
+
+    async findByTokenHash(tokenHash: string): Promise<RefreshTokenEntity | null> {
 
         const [token] = await this.database.connection
             .select()
@@ -80,7 +122,7 @@ export class RefreshTokenRepository implements IRefreshTokenRepository {
             : null;
     }
 
-    async findActiveByUserId(userId: string): Promise<RefreshToken | null> {
+    async findActiveByUserId(userId: string): Promise<RefreshTokenEntity | null> {
 
         const [token] = await this.database.connection
             .select()

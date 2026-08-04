@@ -8,7 +8,7 @@ import { CreateTokensUseCase } from './create-token.use-case.service';
 import { CreateRefreshTokenService } from '../../resfresh-token/services/create/create-refresh-token.use-case.service';
 import { UserStatus } from 'src/common/enums/user/user-status.enum';
 import { Result } from 'src/common/result/result';
-import { RefreshToken } from '../../resfresh-token/entities/refresh-token.entity';
+import { RefreshTokenEntity } from '../../resfresh-token/entities/refresh-token.entity';
 
 describe('CreateTokensUseCase ( UnitTest )', () => {
     let service: CreateTokensUseCase;
@@ -43,14 +43,14 @@ describe('CreateTokensUseCase ( UnitTest )', () => {
         deletedAt: null
     };
 
-    const fakeRefreshToken: RefreshToken = {
+    const fakeRefreshToken: RefreshTokenEntity = {
         id: 'rt-uuid-1234',
         userId: fakeUser.id,
         tokenHash: 'mock-refresh-token-hash',
         expiresAt: new Date(Date.now() + 86400000),
         revokedAt: null,
         createdAt: new Date(),
-    } as RefreshToken;
+    } as RefreshTokenEntity;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -166,7 +166,7 @@ describe('CreateTokensUseCase ( UnitTest )', () => {
                     return null;
                 });
 
-                const failureResult: Result<RefreshToken> = Result.badRequest('Failed to create refresh token');
+                const failureResult: Result<RefreshTokenEntity> = Result.badRequest('Failed to create refresh token');
                 createRefreshTokenService.execute.mockResolvedValue(failureResult);
 
                 const result = await service.execute(fakeUser, ['user']);

@@ -1,5 +1,5 @@
 import { Result } from "src/common/result/result";
-import { RefreshToken } from "../../entities/refresh-token.entity";
+import { RefreshTokenEntity } from "../../entities/refresh-token.entity";
 import { IRefreshTokenRepository } from "../../repository/irefresh-token.repository";
 import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
 
@@ -11,9 +11,9 @@ export class FindByRefreshTokenUseCase {
         private readonly repository: IRefreshTokenRepository
     ) {}
 
-    async execute(token: string): Promise<Result<RefreshToken>> {
+    async execute(token: string): Promise<Result<RefreshTokenEntity>> {
         try {
-            const refreshToken = await this.repository.findByTokenHash(token);
+            const refreshToken: RefreshTokenEntity | null = await this.repository.findByTokenHash(token);
 
             if (!refreshToken) {
                 return Result.notFound("Refresh token not found");

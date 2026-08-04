@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { InternalServerErrorException } from '@nestjs/common';
 import { FindByRefreshTokenUseCase } from './find-refresh-token-by-refresh-token.use-case.service';
 import { IRefreshTokenRepository } from '../../repository/irefresh-token.repository';
-import { RefreshToken } from '../../entities/refresh-token.entity';
+import { RefreshTokenEntity } from '../../entities/refresh-token.entity';
 import { RefreshTokenStatus } from 'src/common/enums/refresh-token/refresh-token-status.enum';
 
 describe('FindByRefreshTokenUseCase ( UnitTest )', () => {
@@ -15,7 +15,7 @@ describe('FindByRefreshTokenUseCase ( UnitTest )', () => {
 
     const fakeTokenHash = 'some-token-hash-string';
     
-    const fakeRefreshToken: RefreshToken = {
+    const fakeRefreshToken: RefreshTokenEntity = {
         id: 'token-uuid-1234',
         userId: 'user-uuid-5678',
         tokenHash: fakeTokenHash,

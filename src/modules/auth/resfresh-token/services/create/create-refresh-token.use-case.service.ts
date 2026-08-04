@@ -6,7 +6,7 @@ import * as argon2 from "argon2";
 
 import { RefreshTokenRepository } from "../../repository/refresh-token.repository";
 import { Result } from "src/common/result/result";
-import { RefreshToken } from "../../entities/refresh-token.entity";
+import { RefreshTokenEntity } from "../../entities/refresh-token.entity";
 import { isUUID } from "class-validator";
 
 @Injectable()
@@ -17,13 +17,13 @@ export class CreateRefreshTokenService {
         private readonly configService: ConfigService,
     ) {}
 
-    async execute(userId: string): Promise<Result<RefreshToken>> {
+    async execute(userId: string): Promise<Result<RefreshTokenEntity>> {
         try {
             if (!isUUID(userId)) return Result.badRequest('Id should be a UUID');
 
             const expirationHours = this.configService.getOrThrow<number>("REFRESH_TOKEN_EXP_HOUR");
 
-            const refreshToken = new RefreshToken();
+            const refreshToken: RefreshTokenEntity = new RefreshTokenEntity();
             refreshToken.userId = userId;
 
             refreshToken.expiresAt = dayjs().add(expirationHours, "hours").toDate();
