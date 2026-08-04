@@ -27,6 +27,15 @@ export class UserRepository implements IUserRepository {
         private readonly database: DatabaseService,
     ) {}
 
+    async findByEmail(email: string): Promise<User | null> {
+        const [rawUser] = await this.database.connection
+            .select()
+            .from(users)
+            .where(eq(users.email, email));
+
+        return rawUser ? UserMapper.toDomain(rawUser) : null;
+    }
+
     async findAll(filter: UserFilter, pageable: Pageable<UserSort>): Promise<Page<User>> {
 
         const conditions: SQL[] = [];
