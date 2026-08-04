@@ -13,6 +13,8 @@ import { UserRoleMapper } from "../mapper/user-role.mapper";
 import { userRoles } from "src/infra/database/schema/user.roles.schemas";
 import { users } from "src/infra/database/schema/user.schema";
 import { roles } from "src/infra/database/schema/roles.schemas";
+import { Role } from "src/modules/roles/entities/role.entity";
+import { RoleMapper } from "src/modules/roles/mapper/role.mapper";
 
 @Injectable()
 export class UserRoleRepository implements IUserRoleRepository {
@@ -42,6 +44,39 @@ export class UserRoleRepository implements IUserRoleRepository {
             .limit(1);
 
         return !!existingUserRole;
+    }
+
+    async findAllRoleNamesByUserId(userId: string): Promise<string[]> {
+        const rows = await this.database.connection
+            .select({
+                name: roles.name,
+            })
+            .from(userRoles)
+            .innerJoin(
+                roles,
+                eq(userRoles.roleId, roles.id),
+            )
+            .where(eq(userRoles.userId, userId));
+
+        return rows.map((row) => row.name);
+    }
+
+    async findAllRolesByUserId(userId: string): Promise<Role[]> {
+        const rows = await this.database.connection
+            .select({
+                id: roles.id,
+                name: roles.name,
+                description: roles.description,
+                isActive: roles.isActive,
+            })
+            .from(userRoles)
+            .innerJoin(
+                roles,
+                eq(userRoles.roleId, roles.id),
+            )
+            .where(eq(userRoles.userId, userId));
+
+        return rows.map(RoleMapper.toDomain);
     }
 
     async findById(id: string): Promise<UserRole | null> {

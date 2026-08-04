@@ -2,6 +2,7 @@ import { Page, Pageable } from "src/common/page/page";
 import { UserRoleFilter } from "../dto/user-role-filter.dto";
 import { UserRole } from "../entities/user-role.entity";
 import { UserRoleSort } from "../dto/user-role-sort.dto";
+import { Role } from "src/modules/roles/entities/role.entity";
 
 export abstract class IUserRoleRepository {
     abstract findAll(filter: UserRoleFilter, pageable: Pageable<UserRoleSort>): Promise<Page<UserRole>>
@@ -18,4 +19,7 @@ export abstract class IUserRoleRepository {
 
     abstract findAllByUserIdJustRoleId(userId: string): Promise<string[]>;
 
+    abstract findAllRolesByUserId(userId: string): Promise<Role[]>;
+
+    abstract findAllRoleNamesByUserId(userId: string): Promise<string[]>;
 }
