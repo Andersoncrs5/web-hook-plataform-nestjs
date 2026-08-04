@@ -44,6 +44,12 @@ export class Result<T> {
         return new Result<any>(null as T, false, [errors], HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+
+    static unauthorized<T>(errors: string): Result<T> {
+        return new Result<any>(null as T, false, [errors], HttpStatus.UNAUTHORIZED);
+    }
+
+
     // =========================
     // GETTERS
     // =========================
