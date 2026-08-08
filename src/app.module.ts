@@ -8,9 +8,11 @@ import { RolesModule } from './modules/roles/roles.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { SecurityModule } from './common/crypto/security.module';
 import { UserRoleModule } from './modules/user-role/user-role.module';
+import { DatabaseModule } from './infra/database/database.module';
 
 @Module({
   imports: [
+    DatabaseModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
