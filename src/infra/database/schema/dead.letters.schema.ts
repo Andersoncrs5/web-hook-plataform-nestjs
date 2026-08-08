@@ -8,12 +8,11 @@ import {
   uniqueIndex
 } from "drizzle-orm/pg-core";
 import { deliveriesTable } from "./deliveries.schema"; 
+import { BaseSchema, idPattern, createdAtPattern, updatedAtPattern, deletedAtPattern, versionPattern } from "../schema-helpers";
 
 export const deadLetters = pgTable("dead_letters", {
+  ...idPattern,
 
-  id: uuid("id")
-    .defaultRandom()
-    .primaryKey(),
 
   deliveryId: uuid("delivery_id")
     .notNull()
@@ -24,9 +23,10 @@ export const deadLetters = pgTable("dead_letters", {
 
   payload: jsonb("payload"),
 
-  createdAt: timestamp("created_at")
-    .defaultNow()
-    .notNull(),
+  ...versionPattern,
+  ...createdAtPattern,
+  ...updatedAtPattern,
+  ...deletedAtPattern
 
 }, (table) => [
   uniqueIndex("uk_dead_letters_delivery_id").on(table.deliveryId),

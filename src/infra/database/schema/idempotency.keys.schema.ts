@@ -9,12 +9,12 @@ import {
   uniqueIndex
 } from "drizzle-orm/pg-core";
 import { applications } from "./applications.schema"; 
+import { BaseSchema, idPattern, createdAtPattern, updatedAtPattern, deletedAtPattern, versionPattern } from "../schema-helpers";
+
 
 export const idempotencyKeys = pgTable("idempotency_keys", {
 
-  id: uuid("id")
-    .defaultRandom()
-    .primaryKey(),
+  ...idPattern,
 
   applicationId: uuid("application_id")
     .notNull()
@@ -32,9 +32,10 @@ export const idempotencyKeys = pgTable("idempotency_keys", {
 
   expiresAt: timestamp("expires_at"),
 
-  createdAt: timestamp("created_at")
-    .defaultNow()
-    .notNull(),
+  ...versionPattern,
+  ...createdAtPattern,
+  ...updatedAtPattern,
+  ...deletedAtPattern
 
 }, (table) => [
   uniqueIndex("uk_idempotency_keys_app_id_key").on(table.applicationId, table.key),

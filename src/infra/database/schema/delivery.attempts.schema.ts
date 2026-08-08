@@ -10,12 +10,12 @@ import {
   uniqueIndex
 } from "drizzle-orm/pg-core";
 import { deliveriesTable } from "./deliveries.schema";
+import { BaseSchema, idPattern, createdAtPattern, updatedAtPattern, deletedAtPattern, versionPattern } from "../schema-helpers";
+
 
 export const deliveryAttempts = pgTable("delivery_attempts", {
 
-  id: uuid("id")
-    .defaultRandom()
-    .primaryKey(),
+  ...idPattern,
 
   deliveryId: uuid("delivery_id")
     .notNull()
@@ -43,9 +43,10 @@ export const deliveryAttempts = pgTable("delivery_attempts", {
   })
     .notNull(),
 
-  createdAt: timestamp("created_at")
-    .defaultNow()
-    .notNull(),
+  ...versionPattern,
+  ...createdAtPattern,
+  ...updatedAtPattern,
+  ...deletedAtPattern
 
 }, (table) => [
   uniqueIndex("uk_delivery_attempts_delivery_id_attempt").on(table.deliveryId, table.attempt),

@@ -1,19 +1,18 @@
 import {
   pgTable,
   uuid,
-  timestamp,
   varchar,
   boolean,
   index,
   uniqueIndex
 } from "drizzle-orm/pg-core";
 import { applications } from "./applications.schema";
+import { BaseSchema, idPattern, createdAtPattern, updatedAtPattern, deletedAtPattern, versionPattern } from "../schema-helpers";
+
 
 export const eventTypes = pgTable("event_types", {
 
-  id: uuid("id")
-    .defaultRandom()
-    .primaryKey(),
+  ...idPattern,
 
   applicationId: uuid("application_id").notNull()
     .references(() => applications.id, { onDelete: 'cascade' }),
@@ -30,13 +29,10 @@ export const eventTypes = pgTable("event_types", {
     .default(true)
     .notNull(),
 
-  createdAt: timestamp("created_at")
-    .defaultNow()
-    .notNull(),
-
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .notNull(),
+  ...versionPattern,
+  ...createdAtPattern,
+  ...updatedAtPattern,
+  ...deletedAtPattern
 
 }, (table) => [
   uniqueIndex("uk_event_types_app_id_name").on(table.applicationId, table.name),

@@ -1,5 +1,5 @@
 import { pgTable, uuid, integer, text, index, pgEnum, timestamp } from "drizzle-orm/pg-core";
-import { BaseSchema, idPattern, createdAtPattern, updatedAtPattern } from "../schema-helpers";
+import { BaseSchema, idPattern, createdAtPattern, updatedAtPattern, deletedAtPattern, versionPattern } from "../schema-helpers";
 import { eventsTable } from "./events.schema";
 
 export const deliveryStatus = pgEnum("delivery_status", [
@@ -18,8 +18,10 @@ export const deliveriesTable = pgTable("deliveries", {
   nextRetryAt: timestamp("next_retry_at"),
   lastError: text("last_error"),
 
+  ...versionPattern,
   ...createdAtPattern,
   ...updatedAtPattern,
+  ...deletedAtPattern
 }, (table) => [
   index("idx_deliveries_retry_status").on(table.status, table.nextRetryAt),
   index("idx_deliveries_endpoint_status").on(table.endpointId, table.status),

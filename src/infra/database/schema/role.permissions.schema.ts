@@ -5,13 +5,16 @@ import {
   index,
   uniqueIndex
 } from "drizzle-orm/pg-core";
-import { roles } from "./roles.schemas";
+import { roles } from "./roles.schema";
 import { permissions } from "./permission.schema";
+import { BaseSchema, idPattern, createdAtPattern, updatedAtPattern, deletedAtPattern, versionPattern } from "../schema-helpers";
+
 
 export const rolePermissions = pgTable(
   "role_permissions",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
+    ...idPattern,
+
 
     roleId: uuid("role_id")
       .notNull()
@@ -21,7 +24,10 @@ export const rolePermissions = pgTable(
       .notNull()
       .references(() => permissions.id, { onDelete: "cascade" }),
 
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    ...versionPattern,
+    ...createdAtPattern,
+    ...updatedAtPattern,
+    ...deletedAtPattern
   },
   (table) => [
     uniqueIndex("uk_role_permissions_role_id_permission_id").on(table.roleId, table.permissionId),

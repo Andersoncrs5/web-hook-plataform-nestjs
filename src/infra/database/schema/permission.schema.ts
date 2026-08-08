@@ -8,9 +8,11 @@ import {
   index,
   uniqueIndex
 } from "drizzle-orm/pg-core";
+import { BaseSchema, idPattern, createdAtPattern, updatedAtPattern, deletedAtPattern, versionPattern } from "../schema-helpers";
+
 
 export const permissions = pgTable("permissions", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  ...idPattern,
   
   name: varchar("name").notNull().unique("uk_name_permission"),
   
@@ -22,9 +24,10 @@ export const permissions = pgTable("permissions", {
   
   isActive: boolean("is_active").default(true).notNull(),
   
-  version: integer("version").default(0).notNull(),
-  
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  ...versionPattern,
+  ...createdAtPattern,
+  ...updatedAtPattern,
+  ...deletedAtPattern
 }, (table) => [
   index("idx_permissions_resource_action").on(table.resource, table.action),
   

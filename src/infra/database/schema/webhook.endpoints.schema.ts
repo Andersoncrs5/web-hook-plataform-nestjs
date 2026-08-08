@@ -10,12 +10,10 @@ import {
   index,
 } from "drizzle-orm/pg-core";
 import { applications } from "./applications.schema";
+import { BaseSchema, idPattern, createdAtPattern, updatedAtPattern, deletedAtPattern, versionPattern } from "../schema-helpers";
 
 export const webhookEndpoints = pgTable("webhook_endpoints", {
-
-  id: uuid("id")
-    .defaultRandom()
-    .primaryKey(),
+  ...idPattern,
 
   applicationId: uuid("application_id")
     .notNull()
@@ -31,10 +29,6 @@ export const webhookEndpoints = pgTable("webhook_endpoints", {
     length: 255,
   }),
 
-  version: integer("version")
-    .default(0)
-    .notNull(),
-
   enabled: boolean("enabled")
     .default(true)
     .notNull(),
@@ -49,15 +43,10 @@ export const webhookEndpoints = pgTable("webhook_endpoints", {
     .default(5)
     .notNull(),
 
-  createdAt: timestamp("created_at")
-    .defaultNow()
-    .notNull(),
-
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .notNull(),
-
-  deletedAt: timestamp("deleted_at"),
+  ...versionPattern,
+  ...createdAtPattern,
+  ...updatedAtPattern,
+  ...deletedAtPattern
 
 }, (table) => [
   index("idx_webhook_endpoints_application_id").on(table.applicationId),

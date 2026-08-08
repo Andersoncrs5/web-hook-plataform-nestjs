@@ -8,11 +8,13 @@ import {
   index,
   uniqueIndex
 } from "drizzle-orm/pg-core";
+import { BaseSchema, idPattern, createdAtPattern, updatedAtPattern, deletedAtPattern, versionPattern } from "../schema-helpers";
+
 
 export const apiKeys = pgTable(
   "api_keys",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
+    ...idPattern,
 
     applicationId: uuid("application_id").notNull(),
 
@@ -21,14 +23,14 @@ export const apiKeys = pgTable(
     keyHash: varchar("key_hash").notNull(),
 
     lastUsedAt: timestamp("last_used_at"),
-
-    version: integer("version").default(0).notNull(),
-
     expiresAt: timestamp("expires_at"),
 
     enabled: boolean("enabled").default(true).notNull(),
 
-    createdAt: timestamp("created_at").defaultNow().notNull(),
+    ...versionPattern,
+    ...createdAtPattern,
+    ...updatedAtPattern,
+    ...deletedAtPattern
 
   }, 
   (table) => [

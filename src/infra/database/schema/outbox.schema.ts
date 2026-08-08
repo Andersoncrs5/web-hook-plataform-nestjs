@@ -7,6 +7,7 @@ import {
   pgEnum,
   index,
 } from "drizzle-orm/pg-core";
+import { BaseSchema, idPattern, createdAtPattern, updatedAtPattern, deletedAtPattern, versionPattern } from "../schema-helpers";
 
 export const outboxStatus = pgEnum(
   "outbox_status", 
@@ -19,9 +20,7 @@ export const outboxStatus = pgEnum(
 
 export const outbox = pgTable("outbox", {
 
-  id: uuid("id")
-    .defaultRandom()
-    .primaryKey(),
+  ...idPattern,
 
   aggregate: varchar("aggregate", {
     length: 100,
@@ -45,9 +44,10 @@ export const outbox = pgTable("outbox", {
 
   processedAt: timestamp("processed_at"),
 
-  createdAt: timestamp("created_at")
-    .defaultNow()
-    .notNull(),
+  ...versionPattern,
+  ...createdAtPattern,
+  ...updatedAtPattern,
+  ...deletedAtPattern
 
 }, (table) => [
   index("idx_outbox_status_created_at").on(table.status, table.createdAt),

@@ -9,11 +9,12 @@ import {
   uniqueIndex
 } from "drizzle-orm/pg-core";
 import { organizations } from "./organization.schema";
+import { BaseSchema, idPattern, createdAtPattern, updatedAtPattern, deletedAtPattern, versionPattern } from "../schema-helpers";
 
 export const applications = pgTable(
   "applications",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
+    ...idPattern,
     
     organizationId: uuid("organization_id")
       .notNull()
@@ -21,13 +22,15 @@ export const applications = pgTable(
 
     name: varchar("name").notNull(),
     slug: varchar("slug").notNull(),
-    version: integer("version").default(0).notNull(),
+    
     description: varchar("description"),
     metadata: jsonb("metadata"),
     status: varchar("status").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
-    deletedAt: timestamp("deleted_at"),
+
+    ...versionPattern,
+    ...createdAtPattern,
+    ...updatedAtPattern,
+    ...deletedAtPattern
   },
   (table) => [
     index("idx_applications_name").on(table.name),
