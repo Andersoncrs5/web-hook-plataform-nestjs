@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import * as argon2 from "argon2";
 
 @Injectable()
@@ -13,7 +13,7 @@ export class PasswordService {
                 parallelism: Number(process.env.ARGON_PARALLELISM) || 1,
             });
         } catch (error) {
-            throw new InternalServerErrorException('Error hashing password');
+            throw error;
         }
     }
 
