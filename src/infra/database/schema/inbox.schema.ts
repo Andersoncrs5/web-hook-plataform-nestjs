@@ -1,6 +1,5 @@
 import {
   pgTable,
-  uuid,
   varchar,
   jsonb,
   timestamp,
@@ -31,8 +30,7 @@ export const inbox = pgTable("inbox", {
     length: 255,
   }).notNull(),
 
-  payload: jsonb("payload")
-    .notNull(),
+  payload: varchar("payload", { length: 1000 }),
 
   status: inboxStatus("status")
     .default("PENDING")
@@ -42,6 +40,7 @@ export const inbox = pgTable("inbox", {
 
   ...createdAtPattern,
   ...versionPattern,
+  ...deletedAtPattern,
   ...updatedAtPattern,
 
 }, (table) => [
