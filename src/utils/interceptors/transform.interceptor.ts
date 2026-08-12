@@ -11,31 +11,33 @@ import { getRequestId } from '../http/request-id';
 import { ResponseHTTP } from '../http/responseHttp.res';
 
 @Injectable()
-export class TransformInterceptor<T> implements NestInterceptor<
-  T,
-  ResponseHTTP<T>
-> {
-  intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): Observable<ResponseHTTP<T>> {
-    const ctx = context.switchToHttp();
-    const request = ctx.getRequest<FastifyRequest>();
-    const response = ctx.getResponse<FastifyReply>(); 
+export class TransformInterceptor<T>
+    implements NestInterceptor<T, ResponseHTTP<T>>
+{
+    intercept(
+        context: ExecutionContext,
+        next: CallHandler,
+    ): Observable<ResponseHTTP<T>> {
 
-    const statusCode = response.statusCode;
-    
-    const isSuccess = statusCode >= 200 && statusCode < 300;
+        const ctx = context.switchToHttp();
 
-    return next.handle().pipe(
-      map((data: T) => ({
-        body: data,
-        timestamp: new Date().toISOString(),
-        path: request.url,
-        method: request.method,
-        traceId: getRequestId(request),
-        status: isSuccess
-      })),
-    );
-  }
+        const request = ctx.getRequest<FastifyRequest>();
+        const response = ctx.getResponse<FastifyReply>();
+
+        return next.handle().pipe(
+            map((data: T) => {
+
+                const statusCode = response.statusCode;
+
+                return {
+                    body: data,
+                    timestamp: new Date().toISOString(),
+                    path: request.url,
+                    method: request.method,
+                    traceId: getRequestId(request),
+                    status: statusCode >= 200 && statusCode < 300,
+                };
+            }),
+        );
+    }
 }
