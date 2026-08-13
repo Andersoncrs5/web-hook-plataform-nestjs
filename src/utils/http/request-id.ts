@@ -1,5 +1,4 @@
 import { FastifyRequest } from 'fastify';
-import { randomUUID } from 'node:crypto';
 
 export function getRequestId(request: FastifyRequest): string {
   const header = request.headers['x-idempotency-key'];
@@ -8,5 +7,5 @@ export function getRequestId(request: FastifyRequest): string {
     return header;
   }
 
-  return request.id ?? randomUUID();
+  return request.id;
 }
