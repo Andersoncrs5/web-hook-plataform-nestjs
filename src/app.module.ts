@@ -9,10 +9,12 @@ import { AuthModule } from './modules/auth/auth.module';
 import { SecurityModule } from './common/crypto/security.module';
 import { UserRoleModule } from './modules/user-role/user-role.module';
 import { DatabaseModule } from './infra/database/database.module';
+import { AuthGuardsModule } from './common/guards/auth-guards.module';
 
 @Module({
   imports: [
     DatabaseModule,
+    AuthGuardsModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
@@ -23,9 +25,12 @@ import { DatabaseModule } from './infra/database/database.module';
     SecurityModule,
     RolesModule,
     InfraModule,
-    UserRoleModule
+    UserRoleModule,
+    
   ],
   controllers: [AppController],
-  providers: [AppService, InfraModule],
+  providers: [
+    AppService
+  ],
 })
 export class AppModule {}
