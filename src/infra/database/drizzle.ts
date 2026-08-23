@@ -1,4 +1,19 @@
 import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/postgres-js';
+
+export function createDatabase(databaseUrl: string) {
+  const client = postgres(databaseUrl, {
+    max: 20
+  });
+
+  return {
+    client,
+    db: drizzle(client),
+  };
+}
+
+/*
+import postgres from 'postgres';
 import { drizzle, PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
 export interface CreateDatabaseOptions<TSchema extends Record<string, unknown>> {
@@ -44,3 +59,5 @@ export function createDatabase<TSchema extends Record<string, unknown> = Record<
     },
   };
 }
+
+*/
