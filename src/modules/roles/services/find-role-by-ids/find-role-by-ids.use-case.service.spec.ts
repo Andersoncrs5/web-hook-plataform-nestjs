@@ -3,7 +3,7 @@ import { FindRoleByIds } from './find-role-by-ids.use-case.service';
 import { IRoleRepository } from '../../repository/iroles.repository';
 import { Role } from '../../entities/role.entity';
 
-describe('FindRoleByIds ( UnitTest )', () => {
+describe('FindRoleByIds  ( UnitTest )', () => {
     let service: FindRoleByIds;
     let roleRepository: jest.Mocked<IRoleRepository>;
 
@@ -23,6 +23,7 @@ describe('FindRoleByIds ( UnitTest )', () => {
             version: 0,
             createdAt: new Date(),
             updatedAt: new Date(),
+            deletedAt: null
         },
         {
             id: validUuid2,
@@ -32,6 +33,7 @@ describe('FindRoleByIds ( UnitTest )', () => {
             version: 0,
             createdAt: new Date(),
             updatedAt: new Date(),
+            deletedAt: null
         },
     ];
 

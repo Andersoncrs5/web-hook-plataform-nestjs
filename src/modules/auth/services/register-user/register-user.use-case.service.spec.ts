@@ -1,87 +1,256 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { RegisterUserService } from './register-user.use-case.service';
-import { CreateUserUseCase } from 'src/modules/user/services/create-user/create-user.use-case.service';
-import { CreateTokensUseCase } from '../create-token/create-token.use-case.service';
-import { FindUserRoleByUserIdJustRoleIdUseCase } from 'src/modules/user-role/services/find-by-user-id/find-by-user-id.use-case.service';
-import { FindRoleByIds } from 'src/modules/roles/services/find-role-by-ids/find-role-by-ids.use-case.service';
-import { User } from 'src/modules/user/entities/user.entity';
-import { Tokens } from '../../classes/token.class';
-import { Role } from 'src/modules/roles/entities/role.entity';
-import { Result } from 'src/common/result/result';
-import { CreateUserDto } from 'src/modules/user/dto/create-user.dto';
-import { HttpStatus } from '@nestjs/common';
+import { Test, TestingModule } from "@nestjs/testing";
 
-describe('RegisterUser ( UnitTest )', () => {
+import { RegisterUserService } from "./register-user.use-case.service";
+import { CreateUserUseCase } from "src/modules/user/services/create-user/create-user.use-case.service";
+import { CreateTokensUseCase } from "../create-token/create-token.use-case.service";
+import { FindUserRoleByUserIdJustRoleIdUseCase } from "src/modules/user-role/services/find-by-user-id/find-by-user-id.use-case.service";
+import { FindRoleByIds } from "src/modules/roles/services/find-role-by-ids/find-role-by-ids.use-case.service";
+
+import { CreateUserDto } from "src/modules/user/dto/create-user.dto";
+import { User } from "src/modules/user/entities/user.entity";
+import { Role } from "src/modules/roles/entities/role.entity";
+import { Tokens } from "../../classes/token.class";
+
+describe("RegisterUserService ( UnitTest )", () => {
+
     let service: RegisterUserService;
+
     let createUser: jest.Mocked<CreateUserUseCase>;
     let createTokens: jest.Mocked<CreateTokensUseCase>;
-    let findUserRoleByUserIdJustRoleId: jest.Mocked<FindUserRoleByUserIdJustRoleIdUseCase>;
+    let findUserRoleByUserIdJustRoleId:
+        jest.Mocked<FindUserRoleByUserIdJustRoleIdUseCase>;
     let findRolesById: jest.Mocked<FindRoleByIds>;
 
-    const mockCreateUser = { execute: jest.fn() };
-    const mockCreateTokens = { execute: jest.fn() };
-    const mockFindUserRoleByUserIdJustRoleId = { execute: jest.fn() };
-    const mockFindRolesById = { execute: jest.fn() };
+    const mockCreateUser = {
+        execute: jest.fn(),
+    };
+
+    const mockCreateTokens = {
+        execute: jest.fn(),
+    };
+
+    const mockFindUserRoleByUserIdJustRoleId = {
+        execute: jest.fn(),
+    };
+
+    const mockFindRolesById = {
+        execute: jest.fn(),
+    };
 
     const fakeDto: CreateUserDto = {
-        email: 'test@example.com',
-        password: 'Password123!',
-        name: 'Test User',
-    } as any;
+        name: "John Doe",
+        email: "johndoe@example.com",
+        password: "securePassword123",
+    } as CreateUserDto;
 
-    const fakeUser = { id: '123e4567-e89b-12d3-a456-426614174000', email: 'test@example.com' } as User;
-    const fakeTokens = { token: 'access', refreshToken: 'refresh' } as Tokens;
-    const fakeRoleId = '987fc532-e89b-12d3-a456-426614174000';
-    const fakeRole = { id: fakeRoleId, name: 'admin' } as Role;
+    const fakeUser: User = {
+        id: "user-uuid-1234",
+        name: "John Doe",
+        fullName: "Johnathan Doe",
+        email: fakeDto.email,
+        passwordHash: "$argon2id$v=19$m=65536,t=3,p=4$fakehash",
+        emailVerified: false,
+        status: "ACTIVE" as any,
+        lastLoginAt: null,
+        version: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+    };
+
+    const fakeRoleIds = [
+        "role-uuid-1",
+        "role-uuid-2",
+    ];
+
+    const fakeRoles: Role[] = [
+        {
+            id: "role-uuid-1",
+            name: "ADMIN",
+            description: "Administrator",
+            isActive: true,
+            version: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: null,
+        } as Role,
+        {
+            id: "role-uuid-2",
+            name: "USER",
+            description: "Regular user",
+            isActive: true,
+            version: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: null,
+        } as Role,
+    ];
+
+    const fakeTokens: Tokens = {
+        token: "access-token",
+        refreshToken: "refresh-token",
+        refreshTokenExp: new Date(),
+        tokenExp: new Date(),
+    } as Tokens;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 RegisterUserService,
-                { provide: CreateUserUseCase, useValue: mockCreateUser },
-                { provide: CreateTokensUseCase, useValue: mockCreateTokens },
-                { provide: FindUserRoleByUserIdJustRoleIdUseCase, useValue: mockFindUserRoleByUserIdJustRoleId },
-                { provide: FindRoleByIds, useValue: mockFindRolesById },
+                {
+                    provide: CreateUserUseCase,
+                    useValue: mockCreateUser,
+                },
+                {
+                    provide: CreateTokensUseCase,
+                    useValue: mockCreateTokens,
+                },
+                {
+                    provide: FindUserRoleByUserIdJustRoleIdUseCase,
+                    useValue: mockFindUserRoleByUserIdJustRoleId,
+                },
+                {
+                    provide: FindRoleByIds,
+                    useValue: mockFindRolesById,
+                },
             ],
         }).compile();
 
         service = module.get<RegisterUserService>(RegisterUserService);
         createUser = module.get(CreateUserUseCase);
         createTokens = module.get(CreateTokensUseCase);
-        findUserRoleByUserIdJustRoleId = module.get(FindUserRoleByUserIdJustRoleIdUseCase);
+        findUserRoleByUserIdJustRoleId = module.get(
+            FindUserRoleByUserIdJustRoleIdUseCase,
+        );
         findRolesById = module.get(FindRoleByIds);
     });
 
     beforeEach(() => {
         jest.clearAllMocks();
+
+        mockCreateUser.execute.mockResolvedValue({
+            isSuccess: true,
+            isFailure: false,
+            errors: [],
+            status: 201,
+            value: fakeUser,
+        } as any);
+
+        mockFindUserRoleByUserIdJustRoleId.execute.mockResolvedValue({
+            isSuccess: true,
+            isFailure: false,
+            errors: [],
+            status: 200,
+            value: fakeRoleIds,
+        } as any);
+
+        mockFindRolesById.execute.mockResolvedValue({
+            isSuccess: true,
+            isFailure: false,
+            errors: [],
+            status: 200,
+            value: fakeRoles,
+        } as any);
+
+        mockCreateTokens.execute.mockResolvedValue({
+            isSuccess: true,
+            isFailure: false,
+            errors: [],
+            status: 200,
+            value: fakeTokens,
+        } as any);
     });
 
-    it('should be defined and dependencies correctly mocked', () => {
+    it("should be defined and dependencies correctly mocked", () => {
         expect(service).toBeDefined();
+        expect(createUser).toBeDefined();
+        expect(createTokens).toBeDefined();
+        expect(findUserRoleByUserIdJustRoleId).toBeDefined();
+        expect(findRolesById).toBeDefined();
     });
 
-    describe('execute', () => {
-        it('should register user and return tokens when user has roles (Happy Path)', async () => {
-            createUser.execute.mockResolvedValue(Result.ok(fakeUser));
-            findUserRoleByUserIdJustRoleId.execute.mockResolvedValue(Result.ok([fakeRoleId]));
-            findRolesById.execute.mockResolvedValue(Result.ok([fakeRole]));
-            createTokens.execute.mockResolvedValue(Result.ok(fakeTokens));
+    describe("execute", () => {
 
+        it("should successfully register user and return tokens (Happy Path)", async () => {
             const result = await service.execute(fakeDto);
 
+            expect(result).toBeDefined();
             expect(result.isSuccess).toBe(true);
             expect(result.value).toEqual(fakeTokens);
 
+            expect(createUser.execute).toHaveBeenCalledTimes(1);
             expect(createUser.execute).toHaveBeenCalledWith(fakeDto);
-            expect(findUserRoleByUserIdJustRoleId.execute).toHaveBeenCalledWith(fakeUser.id);
-            expect(findRolesById.execute).toHaveBeenCalledWith([fakeRoleId]);
-            expect(createTokens.execute).toHaveBeenCalledWith(fakeUser, ['admin']);
+
+            expect(findUserRoleByUserIdJustRoleId.execute).toHaveBeenCalledTimes(1);
+            expect(findUserRoleByUserIdJustRoleId.execute).toHaveBeenCalledWith(
+                fakeUser.id,
+            );
+
+            expect(findRolesById.execute).toHaveBeenCalledTimes(1);
+            expect(findRolesById.execute).toHaveBeenCalledWith(fakeRoleIds);
+
+            expect(createTokens.execute).toHaveBeenCalledTimes(1);
+            expect(createTokens.execute).toHaveBeenCalledWith(
+                fakeUser,
+                fakeRoles.map((role) => role.name),
+            );
         });
 
-        it('should register user and return tokens without querying roles if user has no roleIds', async () => {
-            createUser.execute.mockResolvedValue(Result.ok(fakeUser));
-            findUserRoleByUserIdJustRoleId.execute.mockResolvedValue(Result.ok([]));
-            createTokens.execute.mockResolvedValue(Result.ok(fakeTokens));
+        it("should return failure when createUser fails", async () => {
+            mockCreateUser.execute.mockResolvedValue({
+                isSuccess: false,
+                isFailure: true,
+                errors: ["Email already exists"],
+                status: 400,
+                value: null,
+            } as any);
+
+            const result = await service.execute(fakeDto);
+
+            expect(result.isSuccess).toBe(false);
+            expect(result.errors).toEqual(["Email already exists"]);
+            expect(result.status).toBe(400);
+
+            expect(findUserRoleByUserIdJustRoleId.execute).not.toHaveBeenCalled();
+            expect(findRolesById.execute).not.toHaveBeenCalled();
+            expect(createTokens.execute).not.toHaveBeenCalled();
+        });
+
+        it("should return failure when user-role lookup fails", async () => {
+            mockFindUserRoleByUserIdJustRoleId.execute.mockResolvedValue({
+                isSuccess: false,
+                isFailure: true,
+                errors: ["User roles lookup failed"],
+                status: 500,
+                value: null,
+            } as any);
+
+            const result = await service.execute(fakeDto);
+
+            expect(result.isSuccess).toBe(false);
+            expect(result.errors).toEqual(["User roles lookup failed"]);
+            expect(result.status).toBe(500);
+
+            expect(findRolesById.execute).not.toHaveBeenCalled();
+            expect(createTokens.execute).not.toHaveBeenCalled();
+        });
+
+        it("should return success even when user has no roles", async () => {
+            mockFindUserRoleByUserIdJustRoleId.execute.mockResolvedValue({
+                isSuccess: true,
+                isFailure: false,
+                errors: [],
+                status: 200,
+                value: [],
+            } as any);
+
+            mockCreateTokens.execute.mockResolvedValue({
+                isSuccess: true,
+                isFailure: false,
+                errors: [],
+                status: 200,
+                value: fakeTokens,
+            } as any);
 
             const result = await service.execute(fakeDto);
 
@@ -89,53 +258,54 @@ describe('RegisterUser ( UnitTest )', () => {
             expect(result.value).toEqual(fakeTokens);
 
             expect(findRolesById.execute).not.toHaveBeenCalled();
+            expect(createTokens.execute).toHaveBeenCalledTimes(1);
             expect(createTokens.execute).toHaveBeenCalledWith(fakeUser, []);
         });
 
-        describe('Sad Paths', () => {
-            it('should return failure if createUser fails', async () => {
-                createUser.execute.mockResolvedValue(Result.badRequest('Email already exists'));
+        it("should return failure when role lookup fails", async () => {
+            mockFindRolesById.execute.mockResolvedValue({
+                isSuccess: false,
+                isFailure: true,
+                errors: ["Roles lookup failed"],
+                status: 500,
+                value: null,
+            } as any);
 
-                const result = await service.execute(fakeDto);
+            const result = await service.execute(fakeDto);
 
-                expect(result.isSuccess).toBe(false);
-                expect(result.errors[0]).toBe('Email already exists');
-                expect(findUserRoleByUserIdJustRoleId.execute).not.toHaveBeenCalled();
-            });
+            expect(result.isSuccess).toBe(false);
+            expect(result.errors).toEqual(["Roles lookup failed"]);
+            expect(result.status).toBe(500);
 
-            it('should return failure if findUserRoleByUserIdJustRoleId fails', async () => {
-                createUser.execute.mockResolvedValue(Result.ok(fakeUser));
-                findUserRoleByUserIdJustRoleId.execute.mockResolvedValue(Result.badRequest('Invalid User ID'));
+            expect(createTokens.execute).not.toHaveBeenCalled();
+        });
 
-                const result = await service.execute(fakeDto);
+        it("should return failure when token creation fails", async () => {
+            mockCreateTokens.execute.mockResolvedValue({
+                isSuccess: false,
+                isFailure: true,
+                errors: ["Token creation failed"],
+                status: 500,
+                value: null,
+            } as any);
 
-                expect(result.isSuccess).toBe(false);
-                expect(result.errors[0]).toBe('Invalid User ID');
-                expect(findRolesById.execute).not.toHaveBeenCalled();
-            });
+            const result = await service.execute(fakeDto);
 
-            it('should return failure if findRolesById fails', async () => {
-                createUser.execute.mockResolvedValue(Result.ok(fakeUser));
-                findUserRoleByUserIdJustRoleId.execute.mockResolvedValue(Result.ok([fakeRoleId]));
-                findRolesById.execute.mockResolvedValue(Result.failure(['Role error'], HttpStatus.INTERNAL_SERVER_ERROR));
+            expect(result.isSuccess).toBe(false);
+            expect(result.errors).toEqual(["Token creation failed"]);
+            expect(result.status).toBe(500);
 
-                const result = await service.execute(fakeDto);
+            expect(createTokens.execute).toHaveBeenCalledTimes(1);
+        });
 
-                expect(result.isSuccess).toBe(false);
-                expect(result.errors[0]).toBe('Role error');
-                expect(createTokens.execute).not.toHaveBeenCalled();
-            });
+        it("should throw InternalServerErrorException on unexpected error", async () => {
+            const error = new Error("Unexpected registration failure");
 
-            it('should return failure if createTokens fails', async () => {
-                createUser.execute.mockResolvedValue(Result.ok(fakeUser));
-                findUserRoleByUserIdJustRoleId.execute.mockResolvedValue(Result.ok([]));
-                createTokens.execute.mockResolvedValue(Result.failure(['Token creation error'], HttpStatus.INTERNAL_SERVER_ERROR));
+            mockCreateUser.execute.mockRejectedValue(error);
 
-                const result = await service.execute(fakeDto);
-
-                expect(result.isSuccess).toBe(false);
-                expect(result.errors[0]).toBe('Token creation error');
-            });
+            await expect(service.execute(fakeDto)).rejects.toThrow(
+                "An unexpected error occurred during user registration.",
+            );
         });
     });
 });

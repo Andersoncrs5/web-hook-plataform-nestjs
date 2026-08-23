@@ -1,7 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { ConfigService } from "@nestjs/config";
 import { InternalServerErrorException } from "@nestjs/common";
-import * as argon2 from "argon2";
 
 import { CreateRefreshTokenService } from "./create-refresh-token.use-case.service";
 import { RefreshTokenRepository } from "../../repository/refresh-token.repository";

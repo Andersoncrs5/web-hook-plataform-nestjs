@@ -25,7 +25,7 @@ describe("FindAllRolesByUserIdUseCase ( UnitTest )", () => {
             version: 0,
             createdAt: new Date(),
             updatedAt: new Date(),
-            
+            deletedAt: null
         },
         {
             id: "role-uuid-2",
@@ -35,7 +35,7 @@ describe("FindAllRolesByUserIdUseCase ( UnitTest )", () => {
             version: 0,
             createdAt: new Date(),
             updatedAt: new Date(),
-            
+            deletedAt: null
         },
     ];
 

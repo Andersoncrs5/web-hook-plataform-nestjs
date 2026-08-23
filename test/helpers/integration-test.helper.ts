@@ -235,9 +235,10 @@ export class BaseTestHelper {
             .set("x-idempotency-key", idempotencyKey)
             .send(dto);
 
-        expect(res.status).toBe(HttpStatus.CREATED);
-
+        
         const response = res.body as ResponseHTTP<Tokens>;
+
+        expect(res.status).toBe(HttpStatus.CREATED);
 
         expect(response).toMatchObject({
             status: true,

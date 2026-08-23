@@ -25,6 +25,7 @@ describe("FindAllRoleUseCase ( UnitTest )", () => {
         version: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
+        deletedAt: null
     };
 
     const role2: Role = {
@@ -35,6 +36,7 @@ describe("FindAllRoleUseCase ( UnitTest )", () => {
         version: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
+        deletedAt: null
     };
 
     beforeEach(async () => {
