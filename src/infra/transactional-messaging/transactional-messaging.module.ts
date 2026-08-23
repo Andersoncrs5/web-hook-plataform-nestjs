@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Global, Module } from "@nestjs/common";
 import { CreateInboxUseCase } from "./inbox/services/create-inbox/creare-inbox.use-case.service";
 import { DeleteInboxByIdUseCase } from "./inbox/services/delete-inbox/delete-inbox-by-id.use-case.service";
 import { ExistsInboxByMessageIdAndSourceUseCase } from "./inbox/services/exists-by-message-id-and-source/exists-by-message-id-and-source.use-case.service";
@@ -7,6 +7,7 @@ import { UpdateInboxUseCase } from "./inbox/services/update-inbox/update-inbox.u
 import { IInboxRepository } from "./inbox/repository/iinbox.repository";
 import { InboxRepository } from "./inbox/repository/inbox.repository";
 
+@Global()
 @Module({
     providers: [
         InboxRepository,

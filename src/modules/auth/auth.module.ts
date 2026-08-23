@@ -1,37 +1,53 @@
 import { Module } from '@nestjs/common';
 import { AuthController } from './controller/auth.controller';
 import { JwtModule } from '@nestjs/jwt';
+
 import { CreateTokensUseCase } from './services/create-token/create-token.use-case.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { RefreshTokenRepository } from './resfresh-token/repository/refresh-token.repository';
-import { CreateRefreshTokenService } from './resfresh-token/services/create/create-refresh-token.use-case.service';
-import { FindByRefreshTokenUseCase } from './resfresh-token/services/find-by-refresh-token/find-refresh-token-by-refresh-token.use-case.service';
-import { RevokeRefreshTokenUseCase } from './resfresh-token/services/revoke/revoke-refresh-token.use-case.service';
 import { RotateRefreshTokenUseCase } from './services/rotate-refresh-token/rotate-refresh-token.use-case.service';
 
+import { ResfreshTokenModule } from './resfresh-token/resfresh-token.module';
+import { UserRoleModule } from '../user-role/user-role.module';
+import { TransactionalMessagingModule } from 'src/infra/transactional-messaging/transactional-messaging.module';
+import { UserModule } from '../user/user.module';
+import { LoginUserUseCase } from './services/login-user/login-user.use-case.service';
+import { RegisterUserService } from './services/register-user/register-user.use-case.service';
+import { RolesModule } from '../roles/roles.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+
 @Module({
-  imports: [
-    JwtModule,
-  ],
-  controllers: [
-    AuthController,
-  ],
-  providers: [
-    //LoginUserUseCase,
-    CreateTokensUseCase,
+    imports: [
+        ResfreshTokenModule,
+        UserRoleModule,
+        TransactionalMessagingModule,
+        UserModule,
+        RolesModule,
 
-    RefreshTokenRepository,
-    CreateRefreshTokenService,
-    FindByRefreshTokenUseCase,
-    RotateRefreshTokenUseCase,
-    RevokeRefreshTokenUseCase,
+        JwtModule.registerAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: (config: ConfigService) => ({
+                secret: config.getOrThrow<string>("JWT_SECRET"),
+            }),
+        }),
+    ],
 
-    JwtStrategy,
-  ],
-  exports: [
-    JwtStrategy,
-    CreateTokensUseCase,
-    RefreshTokenRepository,
-  ],
+    controllers: [
+        AuthController,
+    ],
+
+    providers: [
+        CreateTokensUseCase,
+        RotateRefreshTokenUseCase,
+        RegisterUserService,
+        JwtStrategy,
+        LoginUserUseCase
+    ],
+
+    exports: [
+        
+        JwtStrategy,
+        CreateTokensUseCase,
+    ],
 })
 export class AuthModule {}

@@ -7,19 +7,28 @@ import { FindAllRoleUseCase } from './services/find-all/find-all-role.use-case.s
 import { FindByIdRoleUseCase } from './services/find-id-role/find-by-id-role.use-case.service';
 import { UpdateRoleUseCase } from './services/update-role/update-role.use-case.service';
 import { FindRoleByIds } from './services/find-role-by-ids/find-role-by-ids.use-case.service';
+import { IRoleRepository } from './repository/iroles.repository';
+import { RoleRepository } from './repository/roles.repository';
 
 @Module({
   controllers: [RolesController],
   providers: [
+    RoleRepository,
     CreateRoleUseCase,
     DeleteRoleByIdUseCase,
     CheckRoleExistsByNameUseCase,
     FindAllRoleUseCase,
     FindByIdRoleUseCase,
     UpdateRoleUseCase,
-    FindRoleByIds
+    FindRoleByIds,
+    {
+      provide: IRoleRepository,
+      useClass: RoleRepository,
+    },
   ],
   exports: [
+    RoleRepository,
+    IRoleRepository,
     CreateRoleUseCase,
     DeleteRoleByIdUseCase,
     CheckRoleExistsByNameUseCase,
