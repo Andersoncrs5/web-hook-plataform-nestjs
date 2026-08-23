@@ -10,9 +10,9 @@ import { Page, Pageable } from "src/common/page/page";
 import { UserRoleFilter } from "../dto/user-role-filter.dto";
 import { UserRoleSort } from "../dto/user-role-sort.dto";
 import { UserRoleMapper } from "../mapper/user-role.mapper";
-import { userRoles } from "src/infra/database/schema/user.roles.schemas";
+import { userRoles } from "src/infra/database/schema/user.roles.schema";
 import { users } from "src/infra/database/schema/user.schema";
-import { roles } from "src/infra/database/schema/roles.schemas";
+import { roles } from "src/infra/database/schema/roles.schema";
 import { Role } from "src/modules/roles/entities/role.entity";
 import { RoleMapper } from "src/modules/roles/mapper/role.mapper";
 
@@ -28,7 +28,7 @@ export class UserRoleRepository implements IUserRoleRepository {
             .from(userRoles)
             .where(eq(userRoles.userId, userId));
 
-        return rows.map((row) => row.id);
+        return rows.map((row: { id: string; }) => row.id);
     }
     
     async existsByRoleIdAndUserId(roleId: string, userId: string): Promise<boolean> {
