@@ -7,9 +7,8 @@ import {
     desc,
     eq,
     gte,
-    ilike,
-    inArray,
     lte,
+    inArray,
 } from "drizzle-orm";
 
 import { DatabaseService } from "src/infra/database/database.service";
@@ -23,6 +22,11 @@ import { RoleFilter } from "../dto/role-filter.dto";
 import { RoleSort } from "../dto/role-sort.dto";
 import { RoleMapper } from "../mapper/role.mapper";
 
+import {
+    eqIgnoreCase,
+    containsIgnoreCase,
+} from "src/common/repository/custom.query";
+
 @Injectable()
 export class RoleRepository implements IRoleRepository {
 
@@ -30,16 +34,22 @@ export class RoleRepository implements IRoleRepository {
         private readonly database: DatabaseService,
     ) {}
 
-    async findByIds(ids: string[], limit: number = 50): Promise<Role[]> {
-        if (!ids || ids.length === 0) {
+    async findByIds(
+        ids: string[],
+        limit: number = 50,
+    ): Promise<Role[]> {
+
+        if (!ids?.length) {
             return [];
         }
 
-        return await this.database.connection
+        const result = await this.database.connection
             .select()
             .from(roles)
             .where(inArray(roles.id, ids))
             .limit(limit);
+
+        return result.map(RoleMapper.toDomain);
     }
 
     async findAll(
@@ -49,44 +59,115 @@ export class RoleRepository implements IRoleRepository {
 
         const conditions: SQL[] = [];
 
+        /*
+         * ID
+         */
         if (filter.id) {
-            conditions.push(eq(roles.id, filter.id));
-        }
-
-        if (filter.name) {
-            conditions.push(ilike(roles.name, `%${filter.name}%`));
-        }
-
-        if (filter.description) {
             conditions.push(
-                ilike(roles.description, `%${filter.description}%`)
+                eq(roles.id, filter.id),
             );
         }
 
+        /*
+         * NAME
+         *
+         * Case-insensitive partial match.
+         *
+         * "admin" matches:
+         * "Admin"
+         * "ADMIN"
+         * "administrator"
+         */
+        if (filter.name) {
+            conditions.push(
+                containsIgnoreCase(
+                    roles.name,
+                    filter.name,
+                ),
+            );
+        }
+
+        /*
+         * DESCRIPTION
+         */
+        if (filter.description) {
+            conditions.push(
+                containsIgnoreCase(
+                    roles.description,
+                    filter.description,
+                ),
+            );
+        }
+
+        /*
+         * ACTIVE
+         */
         if (filter.isActive !== undefined) {
-            conditions.push(eq(roles.isActive, filter.isActive));
+            conditions.push(
+                eq(
+                    roles.isActive,
+                    filter.isActive,
+                ),
+            );
         }
 
+        /*
+         * VERSION
+         */
         if (filter.version !== undefined) {
-            conditions.push(eq(roles.version, filter.version));
+            conditions.push(
+                eq(
+                    roles.version,
+                    filter.version,
+                ),
+            );
         }
 
+        /*
+         * CREATED AT
+         */
         if (filter.createdAtMin) {
-            conditions.push(gte(roles.createdAt, filter.createdAtMin));
+            conditions.push(
+                gte(
+                    roles.createdAt,
+                    filter.createdAtMin,
+                ),
+            );
         }
 
         if (filter.createdAtMax) {
-            conditions.push(lte(roles.createdAt, filter.createdAtMax));
+            conditions.push(
+                lte(
+                    roles.createdAt,
+                    filter.createdAtMax,
+                ),
+            );
         }
 
+        /*
+         * UPDATED AT
+         */
         if (filter.updatedAtMin) {
-            conditions.push(gte(roles.updatedAt, filter.updatedAtMin));
+            conditions.push(
+                gte(
+                    roles.updatedAt,
+                    filter.updatedAtMin,
+                ),
+            );
         }
 
         if (filter.updatedAtMax) {
-            conditions.push(lte(roles.updatedAt, filter.updatedAtMax));
+            conditions.push(
+                lte(
+                    roles.updatedAt,
+                    filter.updatedAtMax,
+                ),
+            );
         }
 
+        /*
+         * SORT
+         */
         const sortableColumns = {
             id: roles.id,
             name: roles.name,
@@ -98,34 +179,44 @@ export class RoleRepository implements IRoleRepository {
         } as const;
 
         const sortColumn =
-            sortableColumns[pageable.sortBy] ?? roles.createdAt;
+            sortableColumns[pageable.sortBy]
+            ?? roles.createdAt;
 
+        /*
+         * DATA
+         */
         const result = await this.database.connection
             .select()
             .from(roles)
             .where(
-                conditions.length
+                conditions.length > 0
                     ? and(...conditions)
-                    : undefined
+                    : undefined,
             )
             .orderBy(
                 pageable.direction === "asc"
                     ? asc(sortColumn)
-                    : desc(sortColumn)
+                    : desc(sortColumn),
             )
             .limit(pageable.size)
-            .offset((pageable.page - 1) * pageable.size);
-
-        const [{ totalElements }] = await this.database.connection
-            .select({
-                totalElements: count(),
-            })
-            .from(roles)
-            .where(
-                conditions.length
-                    ? and(...conditions)
-                    : undefined
+            .offset(
+                (pageable.page - 1) * pageable.size,
             );
+
+        /*
+         * COUNT
+         */
+        const [{ totalElements }] =
+            await this.database.connection
+                .select({
+                    totalElements: count(),
+                })
+                .from(roles)
+                .where(
+                    conditions.length > 0
+                        ? and(...conditions)
+                        : undefined,
+                );
 
         return new Page(
             result.map(RoleMapper.toDomain),
@@ -135,62 +226,90 @@ export class RoleRepository implements IRoleRepository {
         );
     }
 
-    async findById(id: string): Promise<Role | null> {
+    async findById(
+        id: string,
+    ): Promise<Role | null> {
 
-        const [role] = await this.database.connection
-            .select()
-            .from(roles)
-            .where(eq(roles.id, id))
-            .limit(1);
+        const [role] =
+            await this.database.connection
+                .select()
+                .from(roles)
+                .where(eq(roles.id, id))
+                .limit(1);
 
-        return role ? RoleMapper.toDomain(role) : null;
+        return role
+            ? RoleMapper.toDomain(role)
+            : null;
     }
 
-    async create(role: Role): Promise<Role> {
+    async create(
+        role: Role,
+    ): Promise<Role> {
 
-        const [created] = await this.database.connection
-            .insert(roles)
-            .values(RoleMapper.toPersistence(role))
-            .returning();
+        const [created] =
+            await this.database.connection
+                .insert(roles)
+                .values(
+                    RoleMapper.toPersistence(role),
+                )
+                .returning();
 
         return RoleMapper.toDomain(created);
     }
 
-    async update(role: Role): Promise<Role> {
+    async update(
+        role: Role,
+    ): Promise<Role> {
 
-        const [updated] = await this.database.connection
-            .update(roles)
-            .set({
-                ...RoleMapper.toPersistence(role),
-                version: role.version + 1,
-                updatedAt: new Date(),
-            })
-            .where(eq(roles.id, role.id))
-            .returning();
+        const [updated] =
+            await this.database.connection
+                .update(roles)
+                .set({
+                    ...RoleMapper.toPersistence(role),
+                    version: role.version + 1,
+                    updatedAt: new Date(),
+                })
+                .where(
+                    eq(roles.id, role.id),
+                )
+                .returning();
 
         return RoleMapper.toDomain(updated);
     }
 
-    async deleteById(id: string): Promise<boolean> {
+    async deleteById(
+        id: string,
+    ): Promise<boolean> {
 
-        const deleted = await this.database.connection
-            .delete(roles)
-            .where(eq(roles.id, id))
-            .returning({
-                id: roles.id,
-            });
+        const deleted =
+            await this.database.connection
+                .delete(roles)
+                .where(eq(roles.id, id))
+                .returning({
+                    id: roles.id,
+                });
 
         return deleted.length > 0;
     }
 
-    async existsByName(name: string): Promise<boolean> {
-        const [existingRole] = await this.database.connection
-            .select({ id: roles.id }) 
-            .from(roles)
-            .where(eq(roles.name, name))
-            .limit(1); 
+    async existsByName(
+        name: string,
+    ): Promise<boolean> {
 
-        return !!existingRole;
+        const [existingRole] =
+            await this.database.connection
+                .select({
+                    id: roles.id,
+                })
+                .from(roles)
+                .where(
+                    eqIgnoreCase(
+                        roles.name,
+                        name,
+                    ),
+                )
+                .limit(1);
+
+        return existingRole !== undefined;
     }
-    
 }
