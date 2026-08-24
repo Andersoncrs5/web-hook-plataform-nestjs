@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { FindByRefreshTokenUseCase } from "../../resfresh-token/services/find-by-refresh-token/find-refresh-token-by-refresh-token.use-case.service";
 import { Result } from "src/common/result/result";
 import { RefreshTokenEntity } from "../../resfresh-token/entities/refresh-token.entity";
 import { CreateTokensUseCase } from "../create-token/create-token.use-case.service";
@@ -17,7 +16,7 @@ export class RotateRefreshTokenUseCase {
         private readonly findRoleNamesByUserId: FindAllRoleNamesByUserIdUseCase
     ){}
 
-    async execute(tokenHash: string) {
+    async execute(tokenHash: string): Promise<Result<Tokens>> {
         const tokenResult = await this.findRefreshToken.execute(tokenHash);
         if (tokenResult.isFailure) return Result.failure(tokenResult.errors, tokenResult.status)
         if (tokenResult.value == null) return Result.notFound('Refresh token not found');

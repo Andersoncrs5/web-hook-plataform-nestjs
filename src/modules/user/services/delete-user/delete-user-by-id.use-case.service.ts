@@ -8,7 +8,7 @@ export class DeleteByIdUserUseCase {
         private readonly userRepository: IUserRepository,
     ) {}
 
-    async execute(id: string) {
+    async execute(id: string): Promise<Result<null>> {
         const result = await this.userRepository.deleteById(id);
 
         if (result === false) {

@@ -1,4 +1,4 @@
-import { userRoles } from "src/infra/database/schema/user.roles.schemas";
+import { userRoles } from "src/infra/database/schema/user.roles.schema";
 import { UserRole } from "../entities/user-role.entity";
 import { CreateUserRoleDto } from "../dto/create-user-role.dto"; 
 

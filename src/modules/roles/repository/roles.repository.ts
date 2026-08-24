@@ -13,7 +13,7 @@ import {
 } from "drizzle-orm";
 
 import { DatabaseService } from "src/infra/database/database.service";
-import { roles } from "src/infra/database/schema/roles.schemas";
+import { roles } from "src/infra/database/schema/roles.schema";
 
 import { IRoleRepository } from "./iroles.repository";
 import { Role } from "../entities/role.entity";

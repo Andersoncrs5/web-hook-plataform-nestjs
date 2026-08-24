@@ -1,4 +1,4 @@
-import { roles } from "src/infra/database/schema/roles.schemas";
+import { roles } from "src/infra/database/schema/roles.schema";
 import { Role } from "../entities/role.entity";
 import { CreateRoleDto } from "../dto/create-role.dto";
 import { UpdateRoleDto } from "../dto/update-role.dto";

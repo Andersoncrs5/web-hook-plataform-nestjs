@@ -22,7 +22,7 @@ export class CreateUserUseCase {
             name: dto.name,
             fullName: dto.fullName,
             email: dto.email,
-            passwordHash,
+            passwordHash: passwordHash,
         });
 
         try {
@@ -30,7 +30,7 @@ export class CreateUserUseCase {
             
             return Result.created(created);
         } catch (error: any) {
-            
+
             switch (error.code) {
                 case '23505': {
                     const detail: string = error.detail || '';
