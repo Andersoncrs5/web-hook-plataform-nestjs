@@ -11,6 +11,7 @@ import { Observable } from "rxjs";
 
 import { CreateInboxUseCase } from "../services/create-inbox/creare-inbox.use-case.service";
 import { ExistsInboxByMessageIdAndSourceUseCase } from "../services/exists-by-message-id-and-source/exists-by-message-id-and-source.use-case.service";
+import { randomUUID } from "crypto";
 
 @Injectable()
 export class IdempotencyInterceptor implements NestInterceptor {
@@ -42,8 +43,17 @@ export class IdempotencyInterceptor implements NestInterceptor {
             );
         }
 
-        const source =
-            `${request.method}:${request.route?.path ?? request.url}`;
+        const routePath =
+            request.route?.path ??
+            request.baseUrl
+                ? `${request.baseUrl}${request.route?.path ?? ""}`
+                : request.url.split("?")[0];
+
+        let source = `${request.method}:${routePath}`;
+
+        if (source.length >= 150) {
+            source = randomUUID()
+        }
 
         const existsResult =
             await this.existsInbox.execute(

@@ -13,10 +13,15 @@ export const RedisProvider: Provider = {
         const port = Number(configService.getOrThrow<number>('REDIS_PORT'));
         const password = configService.get<string>('REDIS_PASSWORD') || undefined;
         const db = Number(configService.get<number>('REDIS_DB', 0));
-        const enableTls = configService.get<boolean>('REDIS_TLS', false);
-        const enableReadyCheck = configService.get<boolean>('REDIS_READY_CHECK', true);
+        
+        const tlsRaw = configService.get<string | boolean>('REDIS_TLS', false);
+        const enableTls = tlsRaw === true || tlsRaw === 'true';
+
+        const readyCheckRaw = configService.get<string | boolean>('REDIS_READY_CHECK', true);
+        const enableReadyCheck = readyCheckRaw === true || readyCheckRaw === 'true';
+
         const keyPrefix = configService.get<string>('REDIS_KEY_PREFIX', '');
-        const keepAlive = configService.getOrThrow<number>('REDIS_KEEP_ALIVE');
+        const keepAlive = Number(configService.getOrThrow<number>('REDIS_KEEP_ALIVE'));
 
         return new Redis({
             host: host,

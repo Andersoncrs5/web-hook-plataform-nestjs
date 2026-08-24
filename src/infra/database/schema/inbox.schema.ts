@@ -23,7 +23,7 @@ export const inbox = pgTable("inbox", {
   ...idPattern,
 
   source: varchar("source", {
-    length: 100,
+    length: 200,
   }).notNull(),
 
   messageId: varchar("message_id", {

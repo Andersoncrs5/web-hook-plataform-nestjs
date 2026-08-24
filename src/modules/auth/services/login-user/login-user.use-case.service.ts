@@ -24,7 +24,7 @@ export class LoginUserUseCase {
         try {
             if (!isEmail(dto.email)) return Result.badRequest("Email invalid");
     
-            const userResult = await this.findUserByEmail.execute(dto.email);
+            const userResult: Result<User> = await this.findUserByEmail.execute(dto.email);
 
             if (userResult.isFailure) return Result.unauthorized("Login invalid");
             
@@ -37,9 +37,7 @@ export class LoginUserUseCase {
 
             if (!passwordValid) return Result.unauthorized("Login invalid");
             
-            const roleIdsResult = await this.findUserRoleByUserIdJustRoleId.execute(
-                    user.id,
-                );
+            const roleIdsResult = await this.findUserRoleByUserIdJustRoleId.execute(user.id);
 
             if (roleIdsResult.isFailure) {
                 return Result.failure(

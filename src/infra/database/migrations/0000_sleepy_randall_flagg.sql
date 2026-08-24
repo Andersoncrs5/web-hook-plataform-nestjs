@@ -112,7 +112,7 @@ CREATE TABLE "idempotency_keys" (
 --> statement-breakpoint
 CREATE TABLE "inbox" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"source" varchar(100) NOT NULL,
+	"source" varchar(200) NOT NULL,
 	"message_id" varchar(255) NOT NULL,
 	"payload" varchar(1000),
 	"status" "inbox_status" DEFAULT 'PENDING' NOT NULL,

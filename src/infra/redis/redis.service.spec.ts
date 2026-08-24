@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { RedisService } from './redis.service';
 import { HttpStatus } from '@nestjs/common';
 import { Result } from 'src/common/result/result';

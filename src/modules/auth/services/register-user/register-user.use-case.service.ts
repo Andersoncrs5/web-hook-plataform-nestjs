@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, InternalServerErrorException } from "@nestjs/common";
 import { CreateUserDto } from "src/modules/user/dto/create-user.dto";
 import { User } from "src/modules/user/entities/user.entity";
 import { CreateUserUseCase } from "src/modules/user/services/create-user/create-user.use-case.service";
@@ -19,25 +19,65 @@ export class RegisterUserService {
     ) {}
 
     async execute(dto: CreateUserDto): Promise<Result<Tokens>> {
-        const userResult: Result<User> = await this.createUser.execute(dto);
-        if (userResult.isFailure) return Result.failure(userResult.errors, userResult.status);
-        const user = userResult.value;
+        try {
+            
+            const userResult: Result<User> = await this.createUser.execute(dto);
 
-        const roleIdsResult = await this.findUserRoleByUserIdJustRoleId.execute(user.id);
-        if (roleIdsResult.isFailure) return Result.failure(roleIdsResult.errors, roleIdsResult.status);
-        const roleIds = roleIdsResult.value;
+            if (userResult.isFailure) {
+                return Result.failure(
+                    userResult.errors,
+                    userResult.status,
+                );
+            }
 
-        let roleNames: string[] = [];
+            const user = userResult.value;
 
-        if (roleIds.length > 0) {
-            const rolesResult: Result<Role[]> = await this.findRolesById.execute(roleIds);
-            if (rolesResult.isFailure) return Result.failure(rolesResult.errors, rolesResult.status);
-            roleNames = rolesResult.value.map((role) => role.name);
+            const roleIdsResult =
+                await this.findUserRoleByUserIdJustRoleId.execute(user.id);
+
+            if (roleIdsResult.isFailure) {
+                return Result.failure(
+                    roleIdsResult.errors,
+                    roleIdsResult.status,
+                );
+            }
+
+            const roleIds = roleIdsResult.value;
+
+            let roleNames: string[] = [];
+
+            if (roleIds.length > 0) {
+                const rolesResult: Result<Role[]> =
+                    await this.findRolesById.execute(roleIds);
+
+                if (rolesResult.isFailure) {
+                    return Result.failure(
+                        rolesResult.errors,
+                        rolesResult.status,
+                    );
+                }
+
+                roleNames = rolesResult.value.map(
+                    (role) => role.name,
+                );
+            }
+
+            const tokensResult =
+                await this.createTokens.execute(user, roleNames);
+
+            if (tokensResult.isFailure) {
+                return Result.failure(
+                    tokensResult.errors,
+                    tokensResult.status,
+                );
+            }
+
+            return Result.ok(tokensResult.value);
+
+        } catch (error) {
+            throw new InternalServerErrorException(
+                "An unexpected error occurred during user registration.",
+            );
         }
-
-        const tokensResult = await this.createTokens.execute(user, roleNames);
-        if (tokensResult.isFailure) return Result.failure(tokensResult.errors, tokensResult.status);
-
-        return Result.ok(tokensResult.value);
     }
 }

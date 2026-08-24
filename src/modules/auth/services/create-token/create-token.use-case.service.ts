@@ -6,6 +6,7 @@ import { Payload } from "../../classes/payload.class";
 import { Tokens } from "../../classes/token.class";
 import { CreateRefreshTokenService } from "../../resfresh-token/services/create/create-refresh-token.use-case.service";
 import { Result } from "src/common/result/result";
+import { UserMapper } from "src/modules/user/mapper/user.mapper";
 
 @Injectable()
 export class CreateTokensUseCase {
@@ -30,6 +31,8 @@ export class CreateTokensUseCase {
         tokens.tokenExp = accessTokenExp;
         tokens.refreshToken = refreshToken.tokenHash;
         tokens.refreshTokenExp = refreshToken.expiresAt;
+        tokens.user = UserMapper.toDto(user)
+        tokens.roles = roles
 
         return Result.ok(tokens);
     }
