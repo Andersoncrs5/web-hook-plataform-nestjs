@@ -12,7 +12,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
     async onModuleInit() {
         await this.redis.ping();
-        console.log('✅ Redis connected');
     }
 
     async onModuleDestroy() {
