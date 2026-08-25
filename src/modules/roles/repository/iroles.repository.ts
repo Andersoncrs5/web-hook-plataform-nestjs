@@ -8,6 +8,8 @@ export abstract class IRoleRepository {
 
     abstract deleteById(id: string): Promise<boolean>;
 
+    abstract findByName(name: string): Promise<Role | null>;
+
     abstract update(user: Role): Promise<Role>;
 
     abstract findById(id: string): Promise<Role | null>;

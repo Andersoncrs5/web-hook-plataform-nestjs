@@ -34,6 +34,23 @@ export class RoleRepository implements IRoleRepository {
         private readonly database: DatabaseService,
     ) {}
 
+    async findByName(
+        name: string,
+    ): Promise<Role | null> {
+
+        const [role] =
+            await this.database.connection
+                .select()
+                .from(roles)
+                .where(eqIgnoreCase(roles.name, name))
+                .limit(1);
+
+        return role
+            ? RoleMapper.toDomain(role)
+            : null;
+    }
+
+
     async findByIds(
         ids: string[],
         limit: number = 50,
