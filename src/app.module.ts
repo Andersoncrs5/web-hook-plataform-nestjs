@@ -10,6 +10,8 @@ import { SecurityModule } from './common/crypto/security.module';
 import { UserRoleModule } from './modules/user-role/user-role.module';
 import { DatabaseModule } from './infra/database/database.module';
 import { AuthGuardsModule } from './common/guards/auth-guards.module';
+import { BootstrapModule } from './bootstrap/bootstrap.module';
+import { validateEnv } from './config/env';
 
 @Module({
   imports: [
@@ -18,6 +20,7 @@ import { AuthGuardsModule } from './common/guards/auth-guards.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+      validate: validateEnv
     }),
     ConfigModule,
     UserModule,
@@ -26,7 +29,7 @@ import { AuthGuardsModule } from './common/guards/auth-guards.module';
     RolesModule,
     InfraModule,
     UserRoleModule,
-    
+    BootstrapModule
   ],
   controllers: [AppController],
   providers: [
