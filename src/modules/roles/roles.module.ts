@@ -9,6 +9,7 @@ import { UpdateRoleUseCase } from './services/update-role/update-role.use-case.s
 import { FindRoleByIds } from './services/find-role-by-ids/find-role-by-ids.use-case.service';
 import { IRoleRepository } from './repository/iroles.repository';
 import { RoleRepository } from './repository/roles.repository';
+import { FindRoleByNameUseCase } from './services/find-name/find-role-by-name.use-case.service';
 
 @Module({
   controllers: [RolesController],
@@ -21,6 +22,7 @@ import { RoleRepository } from './repository/roles.repository';
     FindByIdRoleUseCase,
     UpdateRoleUseCase,
     FindRoleByIds,
+    FindRoleByNameUseCase,
     {
       provide: IRoleRepository,
       useClass: RoleRepository,
@@ -35,7 +37,8 @@ import { RoleRepository } from './repository/roles.repository';
     FindAllRoleUseCase,
     FindByIdRoleUseCase,
     UpdateRoleUseCase,
-    FindRoleByIds
+    FindRoleByIds,
+    FindRoleByNameUseCase
   ],
 })
 export class RolesModule {}
