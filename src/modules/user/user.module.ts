@@ -9,6 +9,7 @@ import { FindUserByIdUserUseCase } from './services/find-by-id/find-by-id-user.u
 import { UpdateUserUseCase } from './services/update-user/update-user.use-case.service';
 import { FindAllUserUseCase } from './services/find-all/find-all.use-case.service';
 import { ExistsUserByEmailUseCase } from './services/exists-email/exists-by-email.service';
+import { ExistsUserByNameUseCase } from './services/exists-name/exists-user-by-name.service';
 
 @Module({
   controllers: [UserController],
@@ -21,6 +22,7 @@ import { ExistsUserByEmailUseCase } from './services/exists-email/exists-by-emai
     UpdateUserUseCase,
     FindUserByIdUserUseCase,
     ExistsUserByEmailUseCase,
+    ExistsUserByNameUseCase,
     {
       provide: IUserRepository,
       useClass: UserRepository,
@@ -35,7 +37,8 @@ import { ExistsUserByEmailUseCase } from './services/exists-email/exists-by-emai
     FindUserByEmailUseCase,
     UpdateUserUseCase,
     FindUserByIdUserUseCase,
-    ExistsUserByEmailUseCase
+    ExistsUserByEmailUseCase,
+    ExistsUserByNameUseCase
   ],
 })
 export class UserModule {}
