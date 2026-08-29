@@ -8,7 +8,8 @@ import {
   index,
   uniqueIndex
 } from "drizzle-orm/pg-core";
-import { BaseSchema, idPattern, createdAtPattern, updatedAtPattern, deletedAtPattern, versionPattern } from "../schema-helpers";
+import { idPattern, createdAtPattern, updatedAtPattern, deletedAtPattern, versionPattern } from "../schema-helpers";
+import { applications } from "./applications.schema";
 
 
 export const apiKeys = pgTable(
@@ -16,7 +17,12 @@ export const apiKeys = pgTable(
   {
     ...idPattern,
 
-    applicationId: uuid("application_id").notNull(),
+    applicationId: uuid("application_id")
+        .notNull()
+        .references(() => applications.id, {
+          onDelete: "cascade",
+        }),
+
 
     name: varchar("name").notNull(),
 
