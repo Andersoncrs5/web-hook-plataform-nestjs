@@ -12,6 +12,7 @@ import { DatabaseModule } from './infra/database/database.module';
 import { AuthGuardsModule } from './common/guards/auth-guards.module';
 import { BootstrapModule } from './bootstrap/bootstrap.module';
 import { validateEnv } from './config/env';
+import { OrganizationsModule } from './modules/organizations/organizations.module';
 
 @Module({
   imports: [
@@ -29,7 +30,8 @@ import { validateEnv } from './config/env';
     RolesModule,
     InfraModule,
     UserRoleModule,
-    BootstrapModule
+    BootstrapModule,
+    OrganizationsModule
   ],
   controllers: [AppController],
   providers: [
