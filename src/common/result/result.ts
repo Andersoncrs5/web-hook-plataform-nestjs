@@ -36,6 +36,10 @@ export class Result<T> {
         return new Result<any>(null as T, false, errors, HttpStatus.CONFLICT);
     }
 
+    static forb<T>(...errors: string[]): Result<T> {
+        return new Result<any>(null as T, false, errors, HttpStatus.FORBIDDEN);
+    }
+
     static failure<T>(errors: string[], status: HttpStatus): Result<T> {
         return new Result<any>(null as T, false, errors, status);
     }
