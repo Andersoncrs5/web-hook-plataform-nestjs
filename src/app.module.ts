@@ -13,6 +13,7 @@ import { AuthGuardsModule } from './common/guards/auth-guards.module';
 import { BootstrapModule } from './bootstrap/bootstrap.module';
 import { validateEnv } from './config/env';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
+import { ApplicationModule } from './modules/application/application.module'; // <-- IMPORTANTE
 
 @Module({
   imports: [
@@ -31,7 +32,8 @@ import { OrganizationsModule } from './modules/organizations/organizations.modul
     InfraModule,
     UserRoleModule,
     BootstrapModule,
-    OrganizationsModule
+    OrganizationsModule,
+    ApplicationModule
   ],
   controllers: [AppController],
   providers: [
