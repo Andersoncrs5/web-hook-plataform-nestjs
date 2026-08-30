@@ -33,6 +33,13 @@ import { InboxEntity } from "src/infra/transactional-messaging/inbox/entities/in
 import { InboxStatus } from "src/utils/enums/inbox-status.enum";
 import { Tokens } from "src/modules/auth/classes/token.class";
 import { CreateUserDto } from "src/modules/user/dto/create-user.dto";
+import { OrganizationEntity } from "src/modules/organizations/entities/organization.entity";
+import { OrganizationStatus } from "src/common/enums/organization/organization-status.enum";
+import { OrganizationRepository } from "src/modules/organizations/repository/organization.repository";
+import { LoginUserDto } from "src/modules/auth/dto/request/login-user.requests";
+import { ApplicationRepository } from "src/modules/application/repository/application.repository";
+import { ApplicationEntity } from "src/modules/application/entities/application.entity";
+import { ApplicationEnvironmentEnum, ApplicationStatusEnum, ApplicationTypeEnum } from "src/common/enums/application/application.enums";
 
 export class BaseTestHelper {
 
@@ -40,7 +47,9 @@ export class BaseTestHelper {
     readonly roleRepository: RoleRepository;
     readonly userRoleRepository: UserRoleRepository;
     readonly refreshTokenRepository: RefreshTokenRepository;
-    private readonly inboxRepository: InboxRepository;
+    readonly inboxRepository: InboxRepository;
+    readonly organizationRepository: OrganizationRepository
+    readonly applicationRepository: ApplicationRepository
 
     constructor(private readonly app: INestApplication) {
         this.userRepository = app.get(UserRepository);
@@ -48,6 +57,39 @@ export class BaseTestHelper {
         this.userRoleRepository = app.get(UserRoleRepository);
         this.refreshTokenRepository = app.get(RefreshTokenRepository);
         this.inboxRepository = app.get(InboxRepository);
+        this.organizationRepository = app.get(OrganizationRepository);
+        this.applicationRepository = app.get(ApplicationRepository)
+    }
+
+    async createFakeApplication(
+        override: Partial<ApplicationEntity> = {},
+    ): Promise<ApplicationEntity> {
+        const { user } = await this.createUserHTTP();
+        const org = await this.createOrganization({ userId: user.id });
+        const randomKey = this.getRandomString(10);
+
+        const application: ApplicationEntity = {
+            id: this.generateUuid(),
+            name: `App ${randomKey}`,
+            slug: `app-${randomKey.toLowerCase()}`,
+            organizationId: org.id,
+            createdBy: user.id,
+            type: ApplicationTypeEnum.WEB,
+            environment: ApplicationEnvironmentEnum.PROD,
+            status: ApplicationStatusEnum.ACTIVE,
+            logoUrl: "https://example.com/logo.png",
+            homepageUrl: "https://example.com",
+            description: "Test Application",
+            metadata: null,
+            rateLimit: null,
+            version: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: null,
+            ...override,
+        };
+
+        return await this.applicationRepository.create(application);
     }
 
     async createFakeUserWithRefreshToken(
@@ -111,6 +153,34 @@ export class BaseTestHelper {
         return response.body;
     }
 
+    async createFakeOrganization(
+        override: Partial<OrganizationEntity> = {},
+    ): Promise<OrganizationEntity> {
+        const key = this.getRandomString(10);
+
+        return {
+            id: this.generateUuid(),
+            name: "Organization_" + key,
+            slug: "org-" + key.toLowerCase(),
+            status: OrganizationStatus.ACTIVE,
+            userId: override.userId ?? this.generateUuid(),
+            metadata: null,
+            version: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: null,
+            ...override,
+        };
+    }
+
+    async createOrganization(
+        override: Partial<OrganizationEntity> = {},
+    ): Promise<OrganizationEntity> {
+        const organization = await this.createFakeOrganization(override);
+
+        return await this.organizationRepository.create(organization);
+    }
+
     async createFakeInbox(
         override: Partial<InboxEntity> = {},
     ): Promise<InboxEntity> {
@@ -160,6 +230,74 @@ export class BaseTestHelper {
         return this.inboxRepository.create(
             inboxEntity,
         );
+    }
+
+    async loginMasterHTTP() {
+        const path = "/v1/auth/login";
+
+        const idempotencyKey = randomUUID();
+
+        const dto: LoginUserDto = {
+            email: `user.master.210@gmail.com`,
+            password: "12345678",
+        };
+
+        const res = await request(this.app.getHttpServer())
+            .post(path)
+            .set("x-idempotency-key", idempotencyKey)
+            .send(dto);
+        
+        const response = res.body as ResponseHTTP<Tokens>;
+
+        expect(res.status).toBe(HttpStatus.OK);
+
+        expect(response).toMatchObject({
+            status: true,
+            path,
+            method: "POST",
+        });
+
+        expect(response.traceId).toBeDefined();
+        expect(response.traceId).toBe(idempotencyKey);
+        expect(response.timestamp).toBeDefined();
+        expect(response.body).toBeDefined();
+
+        expect(response.body.user).toMatchObject({
+            email: dto.email,
+        });
+
+        expect(response.body.user.id).toBeDefined();
+
+        expect(response.body.token).toBeDefined();
+        expect(response.body.token).not.toBe("");
+
+        expect(response.body.refreshToken).toBeDefined();
+        expect(response.body.refreshToken).not.toBe("");
+
+        expect(response.body.tokenExp).toBeDefined();
+        expect(response.body.refreshTokenExp).toBeDefined();
+
+        expect(response.body.roles).toEqual(['MASTER']);
+
+        return {
+            dto: dto,    
+            tokens: response.body
+        }
+    }
+
+    async createUserRole(
+        override: Partial<{ id: string; userId: string; roleId: string; version: number; createdAt: Date; updatedAt: Date; deletedAt: Date | null }> = {},
+    ) {
+        return this.userRoleRepository.create({
+            id: this.generateUuid(),
+            userId: override.userId ?? this.generateUuid(),
+            roleId: override.roleId ?? this.generateUuid(),
+            version: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: null,
+            ...override,
+        });
     }
 
     // ============================================================
@@ -272,7 +410,8 @@ export class BaseTestHelper {
 
         return {
             dto: dto,    
-            tokens: response.body
+            tokens: response.body,
+            user: response.body.user
         }
     }
 
