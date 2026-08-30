@@ -34,6 +34,23 @@ export class RoleRepository implements IRoleRepository {
         private readonly database: DatabaseService,
     ) {}
 
+
+    async create(
+        role: Role,
+    ): Promise<Role> {
+
+        const [created] =
+            await this.database.connection
+                .insert(roles)
+                .values(
+                    RoleMapper.toPersistence(role),
+                )
+                .returning();
+
+        return RoleMapper.toDomain(created);
+    }
+
+
     async findByName(
         name: string,
     ): Promise<Role | null> {
@@ -257,21 +274,6 @@ export class RoleRepository implements IRoleRepository {
         return role
             ? RoleMapper.toDomain(role)
             : null;
-    }
-
-    async create(
-        role: Role,
-    ): Promise<Role> {
-
-        const [created] =
-            await this.database.connection
-                .insert(roles)
-                .values(
-                    RoleMapper.toPersistence(role),
-                )
-                .returning();
-
-        return RoleMapper.toDomain(created);
     }
 
     async update(
