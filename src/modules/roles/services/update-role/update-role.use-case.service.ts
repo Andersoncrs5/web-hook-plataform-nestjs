@@ -4,6 +4,7 @@ import { Result } from "src/common/result/result";
 import { UpdateRoleDto } from "../../dto/update-role.dto";
 import { Role } from "../../entities/role.entity";
 import { RoleMapper } from "../../mapper/role.mapper";
+import { isUUID } from "class-validator";
 
 @Injectable()
 export class UpdateRoleUseCase {
@@ -11,7 +12,15 @@ export class UpdateRoleUseCase {
         private readonly roleRepository: IRoleRepository,
     ) {}
 
-    async execute(role: Role, dto: UpdateRoleDto): Promise<Result<Role>> {
+    async execute(id: string, dto: UpdateRoleDto): Promise<Result<Role>> {
+        if (!isUUID(id)) return Result.badRequest('Id should be a UUID');
+        
+        const role = await this.roleRepository.findById(id);
+
+        if (!role) {
+            return Result.notFound('Role not found');
+        }
+
         RoleMapper.merge(role, dto);
         
         try {
@@ -19,17 +28,21 @@ export class UpdateRoleUseCase {
             
             return Result.ok(updated);
         } catch (error: any) {
-            switch (error.code) {
+            const dbError = error?.cause || error;
+            const code = dbError?.code;
+            const detail: string = dbError?.detail || '';
+            const constraint: string = dbError?.constraint_name || '';
+
+            switch (code) {
                 case '23505': {
-                    const detail: string = error.detail || '';
-                    if (detail.includes('uk_name_role')) {
+                    if (constraint.includes('uk_name_role') || detail.includes('uk_name_role')) {
                         return Result.conflict(`Name "${dto.name}" already exists.`);
                     }
                     return Result.conflict('Data conflict detected.');
                 }
 
                 case '23502': {
-                    const missingField = error.column || 'unknown field';
+                    const missingField = dbError.column || 'unknown field';
                     return Result.badRequest(`The field "${missingField}" cannot be null.`);
                 }
 

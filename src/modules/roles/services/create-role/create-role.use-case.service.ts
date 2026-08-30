@@ -22,11 +22,14 @@ export class CreateRoleUseCase {
 
             return Result.created(created);
         } catch (error: any) {
-            switch (error.code) {
-                case '23505': {
-                    const detail: string = error.detail || '';
+            const dbError = error?.cause || error;
+            const code = dbError?.code;
+            const detail: string = dbError?.detail || '';
+            const constraint: string = dbError?.constraint_name || '';
 
-                    if (detail.includes('uk_name_role')) {
+            switch (code) {
+                case '23505': {
+                    if (constraint.includes('uk_name_roles') || detail.includes('uk_name_roles')) {
                         return Result.conflict(`Name "${dto.name}" already exists.`);
                     }
                     
@@ -34,7 +37,7 @@ export class CreateRoleUseCase {
                 }
 
                 case '23502': {
-                    const missingField = error.column || 'unknown field';
+                    const missingField = dbError.column || 'unknown field';
                     return Result.badRequest(`The field "${missingField}" cannot be null.`);
                 }
 
@@ -43,7 +46,7 @@ export class CreateRoleUseCase {
                 }
 
                 default:
-                    // Corrigido a mensagem genérica
+                    console.error(error);
                     throw new InternalServerErrorException('Error creating role.');
             }
         }
