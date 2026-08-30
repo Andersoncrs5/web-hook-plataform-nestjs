@@ -12,6 +12,8 @@ import { UserSort } from '../dto/user-sort.page';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { UpdateUserUseCase } from '../services/update-user/update-user.use-case.service';
 import { FindUserByIdUserUseCase } from '../services/find-by-id/find-by-id-user.use-case.service';
+import { ExistsUserByEmailUseCase } from '../services/exists-email/exists-by-email.service';
+import { ExistsUserByNameUseCase } from '../services/exists-name/exists-user-by-name.service';
 
 @Controller('v1/user')
 export class UserController {
@@ -19,7 +21,9 @@ export class UserController {
     private readonly deleteUser: DeleteByIdUserUseCase,
     private readonly findUser: FindAllUserUseCase,
     private readonly findUserById: FindUserByIdUserUseCase,
-    private readonly updateUser: UpdateUserUseCase
+    private readonly updateUser: UpdateUserUseCase,
+    private readonly existsByEmailUseCase: ExistsUserByEmailUseCase,
+    private readonly existsUserByNameUseCase: ExistsUserByNameUseCase
   ) {}
 
   @Patch()
@@ -83,4 +87,37 @@ export class UserController {
 
     return result.value;
   }
+
+  @Get("/exists/email/:email")
+  async existsByEmail(
+    @Param('email') email: string
+  ): Promise<boolean> {
+    const result = await this.existsByEmailUseCase.execute(email);
+
+    if (result.isFailure) {
+        throw new ResponseException(
+            result.errors[0],
+            result.status,
+        );
+    }
+
+    return result.value;
+  }
+
+  @Get("/exists/name/:name")
+  async existsByName(
+    @Param('name') name: string
+  ): Promise<boolean> {
+    const result = await this.existsUserByNameUseCase.execute(name);
+
+    if (result.isFailure) {
+        throw new ResponseException(
+            result.errors[0],
+            result.status,
+        );
+    }
+
+    return result.value;
+  }
+
 }
