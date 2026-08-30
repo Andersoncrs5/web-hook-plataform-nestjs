@@ -1,5 +1,5 @@
 {
-  "id": "b4d5ff47-f147-432f-a675-131be60087cd",
+  "id": "d9ab3c14-bf62-4c73-ab98-f652bbcc4364",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -180,6 +180,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "name": {
           "name": "name",
           "type": "varchar",
@@ -191,6 +197,42 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "application_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'web'"
+        },
+        "environment": {
+          "name": "environment",
+          "type": "application_environment",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'prod'"
+        },
+        "status": {
+          "name": "status",
+          "type": "application_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "logo_url": {
+          "name": "logo_url",
+          "type": "varchar(600)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "homepage_url": {
+          "name": "homepage_url",
+          "type": "varchar(600)",
+          "primaryKey": false,
+          "notNull": false
         },
         "description": {
           "name": "description",
@@ -204,11 +246,11 @@
           "primaryKey": false,
           "notNull": false
         },
-        "status": {
-          "name": "status",
-          "type": "varchar",
+        "rate_limit": {
+          "name": "rate_limit",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "version": {
           "name": "version",
@@ -239,9 +281,15 @@
         }
       },
       "indexes": {
-        "idx_applications_name": {
-          "name": "idx_applications_name",
+        "uk_applications_organization_name": {
+          "name": "uk_applications_organization_name",
           "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "name",
               "isExpression": false,
@@ -249,14 +297,20 @@
               "nulls": "last"
             }
           ],
-          "isUnique": false,
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
         },
-        "idx_applications_slug": {
-          "name": "idx_applications_slug",
+        "uk_applications_organization_slug": {
+          "name": "uk_applications_organization_slug",
           "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "slug",
               "isExpression": false,
@@ -264,7 +318,7 @@
               "nulls": "last"
             }
           ],
-          "isUnique": false,
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -312,6 +366,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "applications_created_by_users_id_fk": {
+          "name": "applications_created_by_users_id_fk",
+          "tableFrom": "applications",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -2587,6 +2654,35 @@
     }
   },
   "enums": {
+    "public.application_environment": {
+      "name": "application_environment",
+      "schema": "public",
+      "values": [
+        "dev",
+        "staging",
+        "prod"
+      ]
+    },
+    "public.application_status": {
+      "name": "application_status",
+      "schema": "public",
+      "values": [
+        "active",
+        "inactive",
+        "pending",
+        "archived"
+      ]
+    },
+    "public.application_type": {
+      "name": "application_type",
+      "schema": "public",
+      "values": [
+        "web",
+        "mobile",
+        "spa",
+        "m2m"
+      ]
+    },
     "public.delivery_status": {
       "name": "delivery_status",
       "schema": "public",

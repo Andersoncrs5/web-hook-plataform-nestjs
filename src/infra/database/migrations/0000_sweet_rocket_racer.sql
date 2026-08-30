@@ -1,3 +1,6 @@
+CREATE TYPE "public"."application_environment" AS ENUM('dev', 'staging', 'prod');--> statement-breakpoint
+CREATE TYPE "public"."application_status" AS ENUM('active', 'inactive', 'pending', 'archived');--> statement-breakpoint
+CREATE TYPE "public"."application_type" AS ENUM('web', 'mobile', 'spa', 'm2m');--> statement-breakpoint
 CREATE TYPE "public"."delivery_status" AS ENUM('PENDING', 'PROCESSING', 'SUCCESS', 'FAILED', 'DEAD_LETTER');--> statement-breakpoint
 CREATE TYPE "public"."inbox_status" AS ENUM('PENDING', 'PROCESSED', 'FAILED');--> statement-breakpoint
 CREATE TYPE "public"."organization_status" AS ENUM('ACTIVE', 'INACTIVE', 'SUSPENDED');--> statement-breakpoint
@@ -20,11 +23,17 @@ CREATE TABLE "api_keys" (
 CREATE TABLE "applications" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"organization_id" uuid NOT NULL,
+	"created_by" uuid,
 	"name" varchar NOT NULL,
 	"slug" varchar NOT NULL,
+	"type" "application_type" DEFAULT 'web' NOT NULL,
+	"environment" "application_environment" DEFAULT 'prod' NOT NULL,
+	"status" "application_status" DEFAULT 'active' NOT NULL,
+	"logo_url" varchar(600),
+	"homepage_url" varchar(600),
 	"description" varchar,
 	"metadata" jsonb,
-	"status" varchar NOT NULL,
+	"rate_limit" integer,
 	"version" integer DEFAULT 0 NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
@@ -259,6 +268,7 @@ CREATE TABLE "webhook_endpoints" (
 --> statement-breakpoint
 ALTER TABLE "api_keys" ADD CONSTRAINT "api_keys_application_id_applications_id_fk" FOREIGN KEY ("application_id") REFERENCES "public"."applications"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "applications" ADD CONSTRAINT "applications_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "applications" ADD CONSTRAINT "applications_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dead_letters" ADD CONSTRAINT "dead_letters_delivery_id_deliveries_id_fk" FOREIGN KEY ("delivery_id") REFERENCES "public"."deliveries"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "deliveries" ADD CONSTRAINT "deliveries_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "delivery_attempts" ADD CONSTRAINT "delivery_attempts_delivery_id_deliveries_id_fk" FOREIGN KEY ("delivery_id") REFERENCES "public"."deliveries"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -276,8 +286,8 @@ CREATE INDEX "idx_name_api_key" ON "api_keys" USING btree ("name");--> statement
 CREATE UNIQUE INDEX "uk_name_api_key" ON "api_keys" USING btree ("name");--> statement-breakpoint
 CREATE INDEX "idx_hash_api_key" ON "api_keys" USING btree ("key_hash");--> statement-breakpoint
 CREATE UNIQUE INDEX "uk_hash_api_key" ON "api_keys" USING btree ("key_hash");--> statement-breakpoint
-CREATE INDEX "idx_applications_name" ON "applications" USING btree ("name");--> statement-breakpoint
-CREATE INDEX "idx_applications_slug" ON "applications" USING btree ("slug");--> statement-breakpoint
+CREATE UNIQUE INDEX "uk_applications_organization_name" ON "applications" USING btree ("organization_id","name");--> statement-breakpoint
+CREATE UNIQUE INDEX "uk_applications_organization_slug" ON "applications" USING btree ("organization_id","slug");--> statement-breakpoint
 CREATE UNIQUE INDEX "uk_applications_name" ON "applications" USING btree ("name");--> statement-breakpoint
 CREATE UNIQUE INDEX "uk_applications_slug" ON "applications" USING btree ("slug");--> statement-breakpoint
 CREATE UNIQUE INDEX "uk_dead_letters_delivery_id" ON "dead_letters" USING btree ("delivery_id");--> statement-breakpoint
