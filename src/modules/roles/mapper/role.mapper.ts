@@ -20,9 +20,12 @@ export class RoleMapper {
     }
 
     static toRole(dto: CreateRoleDto): Role {
-        return {
+        const role = {
             ...dto
         } as Role
+
+        role.name = dto.name
+        return role
     }
 
     static toPersistence(role: Role) {
