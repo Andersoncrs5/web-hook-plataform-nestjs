@@ -29,8 +29,8 @@ describe('CreateRoleUseCase ( UnitTest )', () => {
         version: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
-        deletedAt: null
-    }
+        deletedAt: null,
+    };
 
     const dtoMock: CreateRoleDto = {
         name: roleMock.name,
@@ -95,8 +95,14 @@ describe('CreateRoleUseCase ( UnitTest )', () => {
                 cryptoService.generateUuid.mockReturnValue(fakeUuid);
             });
 
-            it('should return conflict result when role name is duplicated (23505 - uk_name_role)', async () => {
-                const dbError = { code: '23505', detail: 'Key (name)=(admin) already exists. uk_name_role' };
+            it('should return conflict result when role name is duplicated (23505 - uk_name_roles via cause.constraint_name)', async () => {
+                const dbError = {
+                    cause: {
+                        code: '23505',
+                        constraint_name: 'uk_name_roles',
+                        detail: 'Key (name)=(admin) already exists.',
+                    },
+                };
                 roleRepository.create.mockRejectedValue(dbError);
 
                 const result = await service.execute(dtoMock);
@@ -106,8 +112,28 @@ describe('CreateRoleUseCase ( UnitTest )', () => {
                 expect(roleRepository.create).toHaveBeenCalledTimes(1);
             });
 
+            it('should return conflict result when role name is duplicated (23505 - uk_name_roles via cause.detail)', async () => {
+                const dbError = {
+                    cause: {
+                        code: '23505',
+                        detail: 'Key (name)=(admin) already exists. uk_name_roles',
+                    },
+                };
+                roleRepository.create.mockRejectedValue(dbError);
+
+                const result = await service.execute(dtoMock);
+
+                expect(result.isSuccess).toBe(false);
+                expect(result.errors[0]).toBe(`Name "${dtoMock.name}" already exists.`);
+            });
+
             it('should return generic conflict result for unspecified unique constraint (23505)', async () => {
-                const dbError = { code: '23505', detail: 'Some other unique violation' };
+                const dbError = {
+                    cause: {
+                        code: '23505',
+                        detail: 'Some other unique violation',
+                    },
+                };
                 roleRepository.create.mockRejectedValue(dbError);
 
                 const result = await service.execute(dtoMock);
@@ -117,7 +143,12 @@ describe('CreateRoleUseCase ( UnitTest )', () => {
             });
 
             it('should return bad request result on null violation (23502)', async () => {
-                const dbError = { code: '23502', column: 'name' };
+                const dbError = {
+                    cause: {
+                        code: '23502',
+                        column: 'name',
+                    },
+                };
                 roleRepository.create.mockRejectedValue(dbError);
 
                 const result = await service.execute(dtoMock);
@@ -127,7 +158,11 @@ describe('CreateRoleUseCase ( UnitTest )', () => {
             });
 
             it('should handle missing column property on null violation gracefully (23502)', async () => {
-                const dbError = { code: '23502' }; 
+                const dbError = {
+                    cause: {
+                        code: '23502',
+                    },
+                };
                 roleRepository.create.mockRejectedValue(dbError);
 
                 const result = await service.execute(dtoMock);
@@ -136,7 +171,11 @@ describe('CreateRoleUseCase ( UnitTest )', () => {
             });
 
             it('should return bad request result when field size exceeds limit (22001)', async () => {
-                const dbError = { code: '22001' };
+                const dbError = {
+                    cause: {
+                        code: '22001',
+                    },
+                };
                 roleRepository.create.mockRejectedValue(dbError);
 
                 const result = await service.execute(dtoMock);

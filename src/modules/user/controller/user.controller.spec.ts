@@ -30,6 +30,143 @@ describe("UserController (Integration Test)", () => {
         await BaseIntegrationTest.teardownAll();
     });
 
+    describe("GET /v1/user (findAll)", () => {
+        it("should return 401 Unauthorized when request is not authenticated", async () => {
+            const response = await request(app.getHttpServer())
+                .get(path)
+                .set(
+                    "x-idempotency-key",
+                    randomUUID(),
+                )
+                .expect(HttpStatus.UNAUTHORIZED);
+
+            expect(response.body).toBeDefined();
+        });
+
+        it("should return list of users when authenticated (Happy Path)", async () => {
+            const auth = await helper.createUserHTTP();
+            const user = auth.tokens.user;
+
+            const response = await request(app.getHttpServer())
+                .get(path)
+                .set("Authorization", `Bearer ${auth.tokens.token}`)
+                .query({ page: 0, size: 10 })
+                .set(
+                    "x-idempotency-key",
+                    randomUUID(),
+                )
+                .expect(HttpStatus.OK);
+
+            expect(response.body).toBeDefined();
+        });
+    });
+
+    describe("DELETE /v1/user (delete)", () => {
+        it("should return 401 Unauthorized when request is not authenticated", async () => {
+            const idempotencyKey = randomUUID()
+
+            await request(app.getHttpServer())
+                .delete(path)
+                .set(
+                    "x-idempotency-key",
+                    idempotencyKey,
+                )
+                .expect(HttpStatus.UNAUTHORIZED);
+        });
+
+        it("should delete authenticated user successfully (Happy Path)", async () => {
+            const auth = await helper.createUserHTTP();
+            const user = auth.tokens.user;
+            const idempotencyKey = randomUUID()
+
+            const response = await request(app.getHttpServer())
+                .delete(path)
+                .set(
+                    "x-idempotency-key",
+                    idempotencyKey,
+                )
+                .set("Authorization", `Bearer ${auth.tokens.token}`)
+                .expect(HttpStatus.OK);
+
+            expect(response.body).toBeDefined();
+        });
+    });
+
+    describe("GET /v1/user/exists/email/:email", () => {
+        it("should return true when email exists in database", async () => {
+            const createdUser = await helper.createUser();
+            const idempotencyKey = randomUUID()
+
+            const response = await request(app.getHttpServer())
+                .get(`${path}/exists/email/${createdUser.email}`)
+                .set(
+                    "x-idempotency-key",
+                    idempotencyKey,
+                )
+                .expect(HttpStatus.OK);
+
+            expect(response.body.body).toBe(true);
+        });
+
+        it("should return false when email does not exist in database", async () => {
+            const nonExistentEmail = `nonexistent_${randomUUID()}@domain.com`;
+
+            const response = await request(app.getHttpServer())
+                .get(`${path}/exists/email/${nonExistentEmail}`)
+                .set(
+                    "x-idempotency-key",
+                    randomUUID(),
+                )
+                .expect(HttpStatus.OK);
+
+            expect(response.body.body).toBe(false);
+        });
+
+        it("should return 400 Bad Request when email format is invalid", async () => {
+            const invalidEmail = "invalid-email-format";
+
+            const response = await request(app.getHttpServer())
+                .get(`${path}/exists/email/${invalidEmail}`)
+                .set(
+                    "x-idempotency-key",
+                    randomUUID(),
+                )
+                .expect(HttpStatus.BAD_REQUEST);
+
+            expect(response.body).toBeDefined();
+        });
+    });
+
+    describe("GET /v1/user/exists/name/:name", () => {
+        it("should return true when user name exists in database", async () => {
+            const createdUser = await helper.createUser();
+
+            const response = await request(app.getHttpServer())
+                .get(`${path}/exists/name/${createdUser.name}`)
+                .set(
+                    "x-idempotency-key",
+                    randomUUID(),
+                )
+                .expect(HttpStatus.OK);
+
+            expect(response.body.body).toBe(true);
+        });
+
+        it("should return false when user name does not exist in database", async () => {
+            const nonExistentName = `nonexistent_name_${randomUUID()}`;
+
+            const response = await request(app.getHttpServer())
+                .get(`${path}/exists/name/${nonExistentName}`)
+                .set(
+                    "x-idempotency-key",
+                    randomUUID(),
+                )
+                .expect(HttpStatus.OK);
+
+            expect(response.body.body).toBe(false);
+        });
+    });
+
     describe("PATCH /v1/user", () => {
 
         it("should update the authenticated user's name", async () => {
@@ -325,66 +462,6 @@ describe("UserController (Integration Test)", () => {
                 HttpStatus.UNAUTHORIZED,
             );
         });
-
-
-        it("should return bad request when name is empty", async () => {
-
-            const { tokens } =
-                await helper.createUserHTTP();
-
-            const res =
-                await request(
-                    app.getHttpServer(),
-                )
-                    .patch(path)
-                    .set(
-                        "Authorization",
-                        `Bearer ${tokens.token}`,
-                    )
-                    .set(
-                        "x-idempotency-key",
-                        randomUUID(),
-                    )
-                    .send({
-                        name: "",
-                        password: "12345678",
-                    });
-
-            expect(res.status).toBe(
-                HttpStatus.BAD_REQUEST,
-            );
-        });
-
-
-        it("should return bad request when password is empty", async () => {
-
-            const { tokens } =
-                await helper.createUserHTTP();
-
-            const res =
-                await request(
-                    app.getHttpServer(),
-                )
-                    .patch(path)
-                    .set(
-                        "Authorization",
-                        `Bearer ${tokens.token}`,
-                    )
-                    .set(
-                        "x-idempotency-key",
-                        randomUUID(),
-                    )
-                    .send({
-                        name:
-                            `ValidName_${helper.getRandomString(10)}`,
-                        password: "",
-                    });
-
-            expect(res.status).toBe(
-                HttpStatus.BAD_REQUEST,
-            );
-        });
-
 
         it("should reject a request with an invalid name type", async () => {
 

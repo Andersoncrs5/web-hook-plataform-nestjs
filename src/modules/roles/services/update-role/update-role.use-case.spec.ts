@@ -10,10 +10,11 @@ describe('UpdateRoleUseCase ( UnitTest )', () => {
     let roleRepository: jest.Mocked<IRoleRepository>;
 
     const mockIRoleRepository = {
+        findById: jest.fn(),
         update: jest.fn(),
     };
 
-    const fakeUuid = 'role-uuid-1234-5678';
+    const fakeUuid = '084681ad-54c5-49bb-b2ec-a463d62ef9dd';
 
     const createRoleMock = (): Role => ({
         id: fakeUuid,
@@ -57,20 +58,42 @@ describe('UpdateRoleUseCase ( UnitTest )', () => {
 
     describe('execute', () => {
         
+        it('should return bad request when id is not a valid UUID', async () => {
+            const invalidId = 'invalid-uuid-123';
+
+            const result = await service.execute(invalidId, dtoMock);
+
+            expect(result.isSuccess).toBe(false);
+            expect(result.errors[0]).toBe('Id should be a UUID');
+            expect(roleRepository.findById).not.toHaveBeenCalled();
+            expect(roleRepository.update).not.toHaveBeenCalled();
+        });
+
+        it('should return not found result when role does not exist', async () => {
+            roleRepository.findById.mockResolvedValue(null);
+
+            const result = await service.execute(fakeUuid, dtoMock);
+
+            expect(result.isSuccess).toBe(false);
+            expect(result.errors[0]).toBe('Role not found');
+            expect(roleRepository.findById).toHaveBeenCalledWith(fakeUuid);
+            expect(roleRepository.update).not.toHaveBeenCalled();
+        });
+
         it('should successfully update a role (Happy Path)', async () => {
             const roleInstance = createRoleMock();
-            
-            // O repositório deve retornar a role atualizada
-            roleRepository.update.mockResolvedValue({
-                ...roleInstance,
-                ...dtoMock,
-            });
+            roleRepository.findById.mockResolvedValue(roleInstance);
 
-            const result = await service.execute(roleInstance, dtoMock);
+            const updatedRole = { ...roleInstance, ...dtoMock };
+            roleRepository.update.mockResolvedValue(updatedRole);
+
+            const result = await service.execute(fakeUuid, dtoMock);
 
             expect(result).toBeDefined();
-            expect(result.isSuccess).toBe(true); 
+            expect(result.isSuccess).toBe(true);
+            expect(result.value).toEqual(updatedRole);
 
+            expect(roleRepository.findById).toHaveBeenCalledWith(fakeUuid);
             expect(roleRepository.update).toHaveBeenCalledTimes(1);
             expect(roleRepository.update).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -86,53 +109,93 @@ describe('UpdateRoleUseCase ( UnitTest )', () => {
 
             beforeEach(() => {
                 roleInstance = createRoleMock();
+                roleRepository.findById.mockResolvedValue(roleInstance);
             });
 
-            it('should return conflict result when role name is duplicated (23505 - uk_name_role)', async () => {
-                const dbError = { code: '23505', detail: 'Key (name)=(Super Admin) already exists. uk_name_role' };
+            it('should return conflict result when role name is duplicated (23505 - uk_name_role via cause.constraint_name)', async () => {
+                const dbError = {
+                    cause: {
+                        code: '23505',
+                        constraint_name: 'uk_name_roles',
+                        detail: 'Key (name)=(Super Admin) already exists.',
+                    },
+                };
                 roleRepository.update.mockRejectedValue(dbError);
 
-                const result = await service.execute(roleInstance, dtoMock);
+                const result = await service.execute(fakeUuid, dtoMock);
 
                 expect(result.isSuccess).toBe(false);
                 expect(result.errors[0]).toBe(`Name "${dtoMock.name}" already exists.`);
                 expect(roleRepository.update).toHaveBeenCalledTimes(1);
             });
 
-            it('should return generic conflict result for unspecified unique constraint (23505)', async () => {
-                const dbError = { code: '23505', detail: 'Some other unique violation' };
+            it('should return conflict result when role name is duplicated (23505 - uk_name_role via detail)', async () => {
+                const dbError = {
+                    cause: {
+                        code: '23505',
+                        detail: 'Key (name)=(Super Admin) already exists. uk_name_role',
+                    },
+                };
                 roleRepository.update.mockRejectedValue(dbError);
 
-                const result = await service.execute(roleInstance, dtoMock);
+                const result = await service.execute(fakeUuid, dtoMock);
+
+                expect(result.isSuccess).toBe(false);
+                expect(result.errors[0]).toBe(`Name "${dtoMock.name}" already exists.`);
+            });
+
+            it('should return generic conflict result for unspecified unique constraint (23505)', async () => {
+                const dbError = {
+                    cause: {
+                        code: '23505',
+                        detail: 'Some other unique violation',
+                    },
+                };
+                roleRepository.update.mockRejectedValue(dbError);
+
+                const result = await service.execute(fakeUuid, dtoMock);
 
                 expect(result.isSuccess).toBe(false);
                 expect(result.errors[0]).toBe('Data conflict detected.');
             });
 
             it('should return bad request result on null violation (23502)', async () => {
-                const dbError = { code: '23502', column: 'name' };
+                const dbError = {
+                    cause: {
+                        code: '23502',
+                        column: 'name',
+                    },
+                };
                 roleRepository.update.mockRejectedValue(dbError);
 
-                const result = await service.execute(roleInstance, dtoMock);
+                const result = await service.execute(fakeUuid, dtoMock);
 
                 expect(result.isSuccess).toBe(false);
                 expect(result.errors[0]).toBe('The field "name" cannot be null.');
             });
 
             it('should handle missing column property on null violation gracefully (23502)', async () => {
-                const dbError = { code: '23502' }; 
+                const dbError = {
+                    cause: {
+                        code: '23502',
+                    },
+                };
                 roleRepository.update.mockRejectedValue(dbError);
 
-                const result = await service.execute(roleInstance, dtoMock);
+                const result = await service.execute(fakeUuid, dtoMock);
 
                 expect(result.errors[0]).toBe('The field "unknown field" cannot be null.');
             });
 
             it('should return bad request result when field size exceeds limit (22001)', async () => {
-                const dbError = { code: '22001' };
+                const dbError = {
+                    cause: {
+                        code: '22001',
+                    },
+                };
                 roleRepository.update.mockRejectedValue(dbError);
 
-                const result = await service.execute(roleInstance, dtoMock);
+                const result = await service.execute(fakeUuid, dtoMock);
 
                 expect(result.isSuccess).toBe(false);
                 expect(result.errors[0]).toContain('exceed the maximum allowed length');
@@ -142,8 +205,8 @@ describe('UpdateRoleUseCase ( UnitTest )', () => {
                 const unknownError = new Error('Random database failure');
                 roleRepository.update.mockRejectedValue(unknownError);
 
-                await expect(service.execute(roleInstance, dtoMock)).rejects.toThrow(InternalServerErrorException);
-                await expect(service.execute(roleInstance, dtoMock)).rejects.toThrow('Error updating role.');
+                await expect(service.execute(fakeUuid, dtoMock)).rejects.toThrow(InternalServerErrorException);
+                await expect(service.execute(fakeUuid, dtoMock)).rejects.toThrow('Error updating role.');
                 
                 expect(roleRepository.update).toHaveBeenCalledTimes(2); 
             });

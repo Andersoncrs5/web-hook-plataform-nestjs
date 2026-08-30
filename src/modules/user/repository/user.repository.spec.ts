@@ -453,6 +453,45 @@ describe('UserRepository (Integration Test)', () => {
         });
     });
 
+    describe('existsByEmail', () => {
+        it('should return true when the email exists', async () => {
+            const user = await helper.createFakeUser();
+            await repository.create(user);
+
+            await expect(
+                repository.existsByEmail(user.email),
+            ).resolves.toBe(true);
+        });
+
+        it('should return false when the email does not exist', async () => {
+            const email =
+                `nonexistent_${helper.getRandomString()}@example.com`;
+
+            await expect(
+                repository.existsByEmail(email),
+            ).resolves.toBe(false);
+        });
+    });
+
+    describe('existsByName', () => {
+        it('should return true when the name exists', async () => {
+            const user = await helper.createFakeUser();
+            await repository.create(user);
+
+            await expect(
+                repository.existsByName(user.name),
+            ).resolves.toBe(true);
+        });
+
+        it('should return false when the name does not exist', async () => {
+            const name = `NonExistentName_${helper.getRandomString()}`;
+
+            await expect(
+                repository.existsByName(name),
+            ).resolves.toBe(false);
+        });
+    });
+
     function createPageable(): Pageable<UserSort> {
         return {
             page: 1,
