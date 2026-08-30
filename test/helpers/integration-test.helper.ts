@@ -40,6 +40,8 @@ import { LoginUserDto } from "src/modules/auth/dto/request/login-user.requests";
 import { ApplicationRepository } from "src/modules/application/repository/application.repository";
 import { ApplicationEntity } from "src/modules/application/entities/application.entity";
 import { ApplicationEnvironmentEnum, ApplicationStatusEnum, ApplicationTypeEnum } from "src/common/enums/application/application.enums";
+import { CreateApplicationDto } from "src/modules/application/dto/request/create-application.dto";
+import { ApplicationDto } from "src/modules/application/dto/response/application.dto";
 
 export class BaseTestHelper {
 
@@ -59,6 +61,89 @@ export class BaseTestHelper {
         this.inboxRepository = app.get(InboxRepository);
         this.organizationRepository = app.get(OrganizationRepository);
         this.applicationRepository = app.get(ApplicationRepository)
+    }
+
+    async createApplicationHTTP(
+        organizationId: string,
+        token: string,
+        override: Partial<ApplicationEntity> = {},
+    ) {
+        const path = "/v1/applications";
+
+        const key = this.getRandomString(20);
+        const idempotencyKey = randomUUID();
+
+        const dto: CreateApplicationDto = {
+            name: `name random ${key}`,
+            organizationId,
+            slug: `name-random-${key.toLowerCase()}`,
+            status: ApplicationStatusEnum.ACTIVE,
+            description: "Any desc",
+            environment: ApplicationEnvironmentEnum.PROD,
+            logoUrl: "https://example.com/logo.png",
+            homepageUrl: "https://example.com",
+            metadata: null,
+            rateLimit: null,
+            type: ApplicationTypeEnum.WEB,
+            ...override
+        };
+
+        const res = await request(
+            this.app.getHttpServer(),
+        )
+            .post(path)
+            .set(
+                "x-idempotency-key",
+                idempotencyKey,
+            )
+            .set(
+                "Authorization",
+                `Bearer ${token}`,
+            )
+            .send(dto);
+
+        const response =
+            res.body as ResponseHTTP<ApplicationDto>;
+
+        expect(res.status)
+            .toBe(HttpStatus.CREATED);
+
+        expect(response).toMatchObject({
+            status: true,
+            path,
+            method: "POST",
+        });
+
+        expect(response.traceId)
+            .toBeDefined();
+
+        expect(response.traceId)
+            .toBe(idempotencyKey);
+
+        expect(response.timestamp)
+            .toBeDefined();
+
+        expect(response.body)
+            .toBeDefined();
+
+        expect(response.body)
+            .toMatchObject({
+                organizationId: dto.organizationId,
+                name: dto.name,
+                slug: dto.slug,
+                status: dto.status,
+                description: dto.description,
+                environment: dto.environment,
+                logoUrl: dto.logoUrl,
+                homepageUrl: dto.homepageUrl,
+                rateLimit: dto.rateLimit,
+                type: dto.type,
+            });
+
+        expect(response.body.id)
+            .toBeDefined();
+
+        return response.body
     }
 
     async createFakeApplication(
@@ -411,7 +496,8 @@ export class BaseTestHelper {
         return {
             dto: dto,    
             tokens: response.body,
-            user: response.body.user
+            user: response.body.user,
+            userId: response.body.user.id
         }
     }
 
