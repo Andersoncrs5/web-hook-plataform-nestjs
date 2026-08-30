@@ -7,6 +7,7 @@ import {
   Logger,
   UnauthorizedException,
   ForbiddenException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { UniqueConstraintViolationException } from './classes/unique-constraint-violation.exception';
@@ -19,6 +20,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
   private readonly exceptionMap = new Map<any, number>([
     [UniqueConstraintViolationException, HttpStatus.BAD_REQUEST],
+    [InternalServerErrorException, HttpStatus.INTERNAL_SERVER_ERROR],
     [UnauthorizedException, HttpStatus.UNAUTHORIZED],
     [ForbiddenException, HttpStatus.FORBIDDEN],
   ]);
