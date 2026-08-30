@@ -1,4 +1,3 @@
-import { Injectable } from "@nestjs/common";
 import { User } from "../entities/user.entity";
 import { Page, Pageable } from "src/common/page/page";
 import { UserFilter } from "../dto/user-filter.filter";
@@ -19,5 +18,7 @@ export abstract class IUserRepository {
     abstract findByEmail(email: string): Promise<User | null>;
 
     abstract existsByEmail(email: string): Promise<boolean>
+
+    abstract existsByName(name: string): Promise<boolean>
 
 }

@@ -29,6 +29,21 @@ export class UserRepository implements IUserRepository {
     constructor(
         private readonly database: DatabaseService,
     ) {}
+    
+    async existsByName(name: string): Promise<boolean> {
+        const [user] =
+            await this.database.connection
+                .select({
+                    id: users.id,
+                })
+                .from(users)
+                .where(
+                    eqIgnoreCase(users.name, name),
+                )
+                .limit(1);
+
+        return user !== undefined;
+    }
 
     async existsByEmail(email: string): Promise<boolean> {
         const [user] =
