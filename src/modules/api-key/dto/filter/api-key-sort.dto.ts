@@ -1,0 +1,15 @@
+export enum ApiKeySort {
+  ID = 'id',
+  APPLICATION_ID = 'applicationId',
+  CREATED_BY = 'createdBy',
+  NAME = 'name',
+  KEY_PREFIX = 'keyPrefix',
+  KEY_LAST_CHARS = 'keyLastChars',
+  ENVIRONMENT = 'environment',
+  LAST_USED_AT = 'lastUsedAt',
+  EXPIRES_AT = 'expiresAt',
+  ENABLED = 'enabled',
+  VERSION = 'version',
+  CREATED_AT = 'createdAt',
+  UPDATED_AT = 'updatedAt',
+}
