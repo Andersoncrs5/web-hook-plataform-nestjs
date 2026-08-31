@@ -1,5 +1,5 @@
 {
-  "id": "d9ab3c14-bf62-4c73-ab98-f652bbcc4364",
+  "id": "d1a5233a-2593-4046-b5c2-d52dc1ebde00",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -21,6 +21,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "name": {
           "name": "name",
           "type": "varchar",
@@ -32,6 +38,32 @@
           "type": "varchar",
           "primaryKey": false,
           "notNull": true
+        },
+        "key_prefix": {
+          "name": "key_prefix",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "key_last_chars": {
+          "name": "key_last_chars",
+          "type": "varchar(4)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "environment": {
+          "name": "environment",
+          "type": "api_key_environment",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'live'"
         },
         "last_used_at": {
           "name": "last_used_at",
@@ -81,11 +113,11 @@
         }
       },
       "indexes": {
-        "idx_name_api_key": {
-          "name": "idx_name_api_key",
+        "idx_api_keys_application_id": {
+          "name": "idx_api_keys_application_id",
           "columns": [
             {
-              "expression": "name",
+              "expression": "application_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -96,9 +128,30 @@
           "method": "btree",
           "with": {}
         },
-        "uk_name_api_key": {
-          "name": "uk_name_api_key",
+        "idx_api_keys_key_prefix": {
+          "name": "idx_api_keys_key_prefix",
           "columns": [
+            {
+              "expression": "key_prefix",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "uk_api_keys_application_name": {
+          "name": "uk_api_keys_application_name",
+          "columns": [
+            {
+              "expression": "application_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "name",
               "isExpression": false,
@@ -111,23 +164,8 @@
           "method": "btree",
           "with": {}
         },
-        "idx_hash_api_key": {
-          "name": "idx_hash_api_key",
-          "columns": [
-            {
-              "expression": "key_hash",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "uk_hash_api_key": {
-          "name": "uk_hash_api_key",
+        "uk_api_keys_key_hash": {
+          "name": "uk_api_keys_key_hash",
           "columns": [
             {
               "expression": "key_hash",
@@ -143,8 +181,21 @@
         }
       },
       "foreignKeys": {
-        "api_keys_application_id_applications_id_fk": {
-          "name": "api_keys_application_id_applications_id_fk",
+        "fk_api_keys_created_by": {
+          "name": "fk_api_keys_created_by",
+          "tableFrom": "api_keys",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "fk_api_keys_application": {
+          "name": "fk_api_keys_application",
           "tableFrom": "api_keys",
           "tableTo": "applications",
           "columnsFrom": [
@@ -2654,6 +2705,15 @@
     }
   },
   "enums": {
+    "public.api_key_environment": {
+      "name": "api_key_environment",
+      "schema": "public",
+      "values": [
+        "live",
+        "test",
+        "dev"
+      ]
+    },
     "public.application_environment": {
       "name": "application_environment",
       "schema": "public",

@@ -1,3 +1,4 @@
+CREATE TYPE "public"."api_key_environment" AS ENUM('live', 'test', 'dev');--> statement-breakpoint
 CREATE TYPE "public"."application_environment" AS ENUM('dev', 'staging', 'prod');--> statement-breakpoint
 CREATE TYPE "public"."application_status" AS ENUM('active', 'inactive', 'pending', 'archived');--> statement-breakpoint
 CREATE TYPE "public"."application_type" AS ENUM('web', 'mobile', 'spa', 'm2m');--> statement-breakpoint
@@ -9,8 +10,13 @@ CREATE TYPE "public"."job_status" AS ENUM('PENDING', 'PROCESSING', 'COMPLETED', 
 CREATE TABLE "api_keys" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"application_id" uuid NOT NULL,
+	"created_by" uuid,
 	"name" varchar NOT NULL,
 	"key_hash" varchar NOT NULL,
+	"key_prefix" varchar(20) NOT NULL,
+	"key_last_chars" varchar(4) NOT NULL,
+	"metadata" jsonb,
+	"environment" "api_key_environment" DEFAULT 'live' NOT NULL,
 	"last_used_at" timestamp,
 	"expires_at" timestamp,
 	"enabled" boolean DEFAULT true NOT NULL,
@@ -266,7 +272,8 @@ CREATE TABLE "webhook_endpoints" (
 	"deleted_at" timestamp
 );
 --> statement-breakpoint
-ALTER TABLE "api_keys" ADD CONSTRAINT "api_keys_application_id_applications_id_fk" FOREIGN KEY ("application_id") REFERENCES "public"."applications"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "api_keys" ADD CONSTRAINT "fk_api_keys_created_by" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "api_keys" ADD CONSTRAINT "fk_api_keys_application" FOREIGN KEY ("application_id") REFERENCES "public"."applications"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "applications" ADD CONSTRAINT "applications_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "applications" ADD CONSTRAINT "applications_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dead_letters" ADD CONSTRAINT "dead_letters_delivery_id_deliveries_id_fk" FOREIGN KEY ("delivery_id") REFERENCES "public"."deliveries"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -282,10 +289,10 @@ ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_permission_id_pe
 ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_role_id_roles_id_fk" FOREIGN KEY ("role_id") REFERENCES "public"."roles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "webhook_endpoints" ADD CONSTRAINT "webhook_endpoints_application_id_applications_id_fk" FOREIGN KEY ("application_id") REFERENCES "public"."applications"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "idx_name_api_key" ON "api_keys" USING btree ("name");--> statement-breakpoint
-CREATE UNIQUE INDEX "uk_name_api_key" ON "api_keys" USING btree ("name");--> statement-breakpoint
-CREATE INDEX "idx_hash_api_key" ON "api_keys" USING btree ("key_hash");--> statement-breakpoint
-CREATE UNIQUE INDEX "uk_hash_api_key" ON "api_keys" USING btree ("key_hash");--> statement-breakpoint
+CREATE INDEX "idx_api_keys_application_id" ON "api_keys" USING btree ("application_id");--> statement-breakpoint
+CREATE INDEX "idx_api_keys_key_prefix" ON "api_keys" USING btree ("key_prefix");--> statement-breakpoint
+CREATE UNIQUE INDEX "uk_api_keys_application_name" ON "api_keys" USING btree ("application_id","name");--> statement-breakpoint
+CREATE UNIQUE INDEX "uk_api_keys_key_hash" ON "api_keys" USING btree ("key_hash");--> statement-breakpoint
 CREATE UNIQUE INDEX "uk_applications_organization_name" ON "applications" USING btree ("organization_id","name");--> statement-breakpoint
 CREATE UNIQUE INDEX "uk_applications_organization_slug" ON "applications" USING btree ("organization_id","slug");--> statement-breakpoint
 CREATE UNIQUE INDEX "uk_applications_name" ON "applications" USING btree ("name");--> statement-breakpoint
