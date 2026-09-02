@@ -1,179 +1,123 @@
-import { NestFactory } from "@nestjs/core";
-import {
-    FastifyAdapter,
-    NestFastifyApplication,
-} from "@nestjs/platform-fastify";
-import {
-    ValidationPipe,
-    VersioningType,
-} from "@nestjs/common";
-import {
-    DocumentBuilder,
-    SwaggerModule,
-} from "@nestjs/swagger";
-import { useContainer } from "class-validator";
-import { randomUUID } from "node:crypto";
-import multipart from "@fastify/multipart";
+import { NestFactory } from '@nestjs/core';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { useContainer } from 'class-validator';
+import { randomUUID } from 'node:crypto';
+import multipart from '@fastify/multipart';
 
-import { AppModule } from "./app.module";
-import { GlobalExceptionFilter } from "./utils/exceptions/all-exceptions.filter";
-import { TransformInterceptor } from "./utils/interceptors/transform.interceptor";
-
+import { AppModule } from './app.module';
+import { GlobalExceptionFilter } from './utils/exceptions/all-exceptions.filter';
+import { TransformInterceptor } from './utils/interceptors/transform.interceptor';
+import { TransactionInterceptor } from './infra/interceptors/transaction/transaction.interceptor';
+import { DatabaseService } from './infra/database/database.service';
 
 async function bootstrap() {
+  const port = Number(process.env.PORT);
 
-    const port = Number(process.env.PORT);
+  const host = process.env.HOST || '0.0.0.0';
 
-    const host = process.env.HOST || "0.0.0.0";
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter({
+      genReqId: () => randomUUID(),
+    }),
+  );
 
-    const app =
-        await NestFactory.create<NestFastifyApplication>(
-            AppModule,
-            new FastifyAdapter({
-                genReqId: () => randomUUID(),
-            }),
-        );
+  // ========================================================
+  // MULTIPART
+  // ========================================================
 
+  await app.register(multipart, {
+    limits: {
+      fileSize: (Number(process.env.MULTIPART_FILE_SIZE_MB) || 40) * 1024 * 1024,
+    },
+  });
 
-    // ========================================================
-    // MULTIPART
-    // ========================================================
+  // ========================================================
+  // CORS
+  // ========================================================
 
-    await app.register(multipart, {
-        limits: {
-            fileSize:
-                (Number(process.env.MULTIPART_FILE_SIZE_MB) || 40)
-                * 1024
-                * 1024,
-        },
-    });
+  app.enableCors({
+    origin: process.env.CORS_ORIGIN === 'true' ? true : process.env.CORS_ORIGIN,
 
-    // ========================================================
-    // CORS
-    // ========================================================
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
 
-    app.enableCors({
-        origin:
-            process.env.CORS_ORIGIN === "true"
-                ? true
-                : process.env.CORS_ORIGIN,
+    credentials: process.env.CORS_CREDENTIALS === 'true',
+  });
 
-        methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  // ========================================================
+  // API VERSIONING
+  // ========================================================
 
-        credentials:
-            process.env.CORS_CREDENTIALS === "true",
-    });
+  app.enableVersioning({
+    type: VersioningType.URI,
 
+    defaultVersion: process.env.API_VERSION || '1',
+  });
 
-    // ========================================================
-    // API VERSIONING
-    // ========================================================
+  // ========================================================
+  // VALIDATION
+  // ========================================================
 
-    app.enableVersioning({
-        type: VersioningType.URI,
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: process.env.GLOBAL_PIPES_WHITELIST === 'true',
 
-        defaultVersion:
-            process.env.API_VERSION || "1",
-    });
+      forbidNonWhitelisted: process.env.GLOBAL_PIPES_FORBID_NON_WHITE_LISTED === 'true',
 
+      transform: process.env.GLOBAL_PIPES_TRANSFORM === 'true',
+    }),
+  );
 
-    // ========================================================
-    // VALIDATION
-    // ========================================================
+  // ========================================================
+  // GLOBAL HANDLERS
+  // ========================================================
 
-    app.useGlobalPipes(
-        new ValidationPipe({
-            whitelist:
-                process.env.GLOBAL_PIPES_WHITELIST === "true",
+  const databaseService = app.get(DatabaseService);
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
-            forbidNonWhitelisted:
-                process.env.GLOBAL_PIPES_FORBID_NON_WHITE_LISTED === "true",
+  app.useGlobalInterceptors(
+    new TransactionInterceptor(databaseService),
+    new TransformInterceptor(),
+  );
 
-            transform:
-                process.env.GLOBAL_PIPES_TRANSFORM === "true",
-        }),
-    );
+  useContainer(app.select(AppModule), {
+    fallbackOnErrors: true,
+  });
 
+  // ========================================================
+  // SWAGGER
+  // ========================================================
 
-    // ========================================================
-    // GLOBAL HANDLERS
-    // ========================================================
+  if (process.env.SWAGGER_ENABLED === 'true') {
+    const config = new DocumentBuilder()
+      .setTitle(process.env.APP_NAME || 'Webhook Platform API')
+      .setDescription(process.env.APP_DESCRIPTION || 'Documentação técnica da Webhook Platform')
+      .setVersion(process.env.APP_VERSION || '1.0')
+      .addBearerAuth()
+      .build();
 
-    app.useGlobalFilters(
-        new GlobalExceptionFilter(),
-    );
+    const document = SwaggerModule.createDocument(app, config);
 
-    app.useGlobalInterceptors(
-        new TransformInterceptor(),
-    );
+    SwaggerModule.setup(process.env.SWAGGER_PATH || 'api', app, document);
+  }
 
-    useContainer(
-        app.select(AppModule),
-        {
-            fallbackOnErrors: true,
-        },
-    );
+  // ========================================================
+  // START
+  // ========================================================
 
+  await app.listen(port, host);
 
-    // ========================================================
-    // SWAGGER
-    // ========================================================
+  console.log(
+    `🚀 Application is running on: http://localhost:${port}/${process.env.API_PREFIX || 'v1'}`,
+  );
 
-    if (process.env.SWAGGER_ENABLED === "true") {
-
-        const config =
-            new DocumentBuilder()
-                .setTitle(
-                    process.env.APP_NAME ||
-                    "Webhook Platform API",
-                )
-                .setDescription(
-                    process.env.APP_DESCRIPTION ||
-                    "Documentação técnica da Webhook Platform",
-                )
-                .setVersion(
-                    process.env.APP_VERSION ||
-                    "1.0",
-                )
-                .addBearerAuth()
-                .build();
-
-
-        const document =
-            SwaggerModule.createDocument(
-                app,
-                config,
-            );
-
-
-        SwaggerModule.setup(
-            process.env.SWAGGER_PATH || "api",
-            app,
-            document,
-        );
-    }
-
-
-    // ========================================================
-    // START
-    // ========================================================
-
-    await app.listen(
-        port,
-        host,
-    );
-
-
+  if (process.env.SWAGGER_ENABLED === 'true') {
     console.log(
-        `🚀 Application is running on: http://localhost:${port}/${process.env.API_PREFIX || "v1"}`,
+      `📄 Swagger documentation: http://localhost:${port}/${process.env.SWAGGER_PATH || 'api'}`,
     );
-
-    if (process.env.SWAGGER_ENABLED === "true") {
-        console.log(
-            `📄 Swagger documentation: http://localhost:${port}/${process.env.SWAGGER_PATH || "api"}`,
-        );
-    }
+  }
 }
-
 
 bootstrap();
