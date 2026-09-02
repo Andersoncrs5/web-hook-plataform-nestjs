@@ -1,7 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { CurrentUser } from 'src/modules/auth/decorators/current-user.decorator';
 import { Payload } from 'src/modules/auth/classes/payload.class';
-import { JwtGuard } from 'src/common/guards/guards/auth-guards.guard';
 import { DeleteByIdUserUseCase } from '../services/delete-user/delete-user-by-id.use-case.service';
 import { ResponseException } from 'src/utils/exceptions/classes/response.exception';
 import { Result } from 'src/common/result/result';
@@ -14,6 +23,7 @@ import { UpdateUserUseCase } from '../services/update-user/update-user.use-case.
 import { FindUserByIdUserUseCase } from '../services/find-by-id/find-by-id-user.use-case.service';
 import { ExistsUserByEmailUseCase } from '../services/exists-email/exists-by-email.service';
 import { ExistsUserByNameUseCase } from '../services/exists-name/exists-user-by-name.service';
+import { JwtGuard } from 'src/common/guards/guards/auth/auth-guards.guard';
 
 @Controller('v1/user')
 export class UserController {
@@ -23,31 +33,21 @@ export class UserController {
     private readonly findUserById: FindUserByIdUserUseCase,
     private readonly updateUser: UpdateUserUseCase,
     private readonly existsByEmailUseCase: ExistsUserByEmailUseCase,
-    private readonly existsUserByNameUseCase: ExistsUserByNameUseCase
+    private readonly existsUserByNameUseCase: ExistsUserByNameUseCase,
   ) {}
 
   @Patch()
-  @UseGuards(JwtGuard)
-  async update(
-    @CurrentUser() payload: Payload,
-    @Body() dto: UpdateUserDto
-  ) {
-    const userResult = await this.findUserById.execute(payload.sub); 
-    
+  async update(@CurrentUser() payload: Payload, @Body() dto: UpdateUserDto) {
+    const userResult = await this.findUserById.execute(payload.sub);
+
     if (userResult.isFailure) {
-      throw new ResponseException(
-          userResult.errors[0],
-          userResult.status,
-      );
+      throw new ResponseException(userResult.errors[0], userResult.status);
     }
 
-    const result = await this.updateUser.execute(userResult.value, dto)
+    const result = await this.updateUser.execute(userResult.value, dto);
 
     if (result.isFailure) {
-      throw new ResponseException(
-          result.errors[0],
-          result.status,
-      );
+      throw new ResponseException(result.errors[0], result.status);
     }
 
     return result.value;
@@ -55,17 +55,11 @@ export class UserController {
 
   @Get()
   @UseGuards(JwtGuard)
-  async findAll(
-    @Query() filter: UserFilter,
-    @Query() pageable: Pageable<UserSort>,
-  ) {
+  async findAll(@Query() filter: UserFilter, @Query() pageable: Pageable<UserSort>) {
     const result = await this.findUser.execute(filter, pageable);
 
     if (result.isFailure) {
-      throw new ResponseException(
-        result.errors[0],
-        result.status,
-      );
+      throw new ResponseException(result.errors[0], result.status);
     }
 
     return result.value;
@@ -73,51 +67,35 @@ export class UserController {
 
   @Delete()
   @UseGuards(JwtGuard)
-  async delete(
-      @CurrentUser() payload: Payload,
-  ) {
+  async delete(@CurrentUser() payload: Payload) {
     const result: Result<null> = await this.deleteUser.execute(payload.sub);
 
     if (result.isFailure) {
-        throw new ResponseException(
-            result.errors[0],
-            result.status,
-        );
+      throw new ResponseException(result.errors[0], result.status);
     }
 
     return result.value;
   }
 
-  @Get("/exists/email/:email")
-  async existsByEmail(
-    @Param('email') email: string
-  ): Promise<boolean> {
+  @Get('/exists/email/:email')
+  async existsByEmail(@Param('email') email: string): Promise<boolean> {
     const result = await this.existsByEmailUseCase.execute(email);
 
     if (result.isFailure) {
-        throw new ResponseException(
-            result.errors[0],
-            result.status,
-        );
+      throw new ResponseException(result.errors[0], result.status);
     }
 
     return result.value;
   }
 
-  @Get("/exists/name/:name")
-  async existsByName(
-    @Param('name') name: string
-  ): Promise<boolean> {
+  @Get('/exists/name/:name')
+  async existsByName(@Param('name') name: string): Promise<boolean> {
     const result = await this.existsUserByNameUseCase.execute(name);
 
     if (result.isFailure) {
-        throw new ResponseException(
-            result.errors[0],
-            result.status,
-        );
+      throw new ResponseException(result.errors[0], result.status);
     }
 
     return result.value;
   }
-
 }
