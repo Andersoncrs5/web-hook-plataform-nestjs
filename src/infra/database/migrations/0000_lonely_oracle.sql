@@ -4,6 +4,7 @@ CREATE TYPE "public"."application_status" AS ENUM('active', 'inactive', 'pending
 CREATE TYPE "public"."application_type" AS ENUM('web', 'mobile', 'spa', 'm2m');--> statement-breakpoint
 CREATE TYPE "public"."delivery_status" AS ENUM('PENDING', 'PROCESSING', 'SUCCESS', 'FAILED', 'DEAD_LETTER');--> statement-breakpoint
 CREATE TYPE "public"."inbox_status" AS ENUM('PENDING', 'PROCESSED', 'FAILED');--> statement-breakpoint
+CREATE TYPE "public"."organization_member_status" AS ENUM('ACTIVE', 'INVITED', 'SUSPENDED');--> statement-breakpoint
 CREATE TYPE "public"."organization_status" AS ENUM('ACTIVE', 'INACTIVE', 'SUSPENDED');--> statement-breakpoint
 CREATE TYPE "public"."outbox_status" AS ENUM('PENDING', 'PROCESSED', 'FAILED');--> statement-breakpoint
 CREATE TYPE "public"."job_status" AS ENUM('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED');--> statement-breakpoint
@@ -138,6 +139,18 @@ CREATE TABLE "inbox" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "organization_members" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"organization_id" uuid NOT NULL,
+	"user_id" uuid NOT NULL,
+	"role_id" uuid NOT NULL,
+	"status" "organization_member_status" DEFAULT 'ACTIVE' NOT NULL,
+	"version" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"deleted_at" timestamp
+);
+--> statement-breakpoint
 CREATE TABLE "organizations" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" varchar(150) NOT NULL,
@@ -165,6 +178,17 @@ CREATE TABLE "outbox" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp
+);
+--> statement-breakpoint
+CREATE TABLE "password_reset_tokens" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"token_hash" varchar(128) NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"used_at" timestamp,
+	"enabled" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "permissions" (
@@ -282,7 +306,11 @@ ALTER TABLE "delivery_attempts" ADD CONSTRAINT "delivery_attempts_delivery_id_de
 ALTER TABLE "event_types" ADD CONSTRAINT "event_types_application_id_applications_id_fk" FOREIGN KEY ("application_id") REFERENCES "public"."applications"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "events" ADD CONSTRAINT "events_application_id_applications_id_fk" FOREIGN KEY ("application_id") REFERENCES "public"."applications"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "idempotency_keys" ADD CONSTRAINT "idempotency_keys_application_id_applications_id_fk" FOREIGN KEY ("application_id") REFERENCES "public"."applications"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "organization_members" ADD CONSTRAINT "fk_organization_members_organization" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "organization_members" ADD CONSTRAINT "fk_organization_members_user" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "organization_members" ADD CONSTRAINT "fk_organization_members_role" FOREIGN KEY ("role_id") REFERENCES "public"."roles"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "organizations" ADD CONSTRAINT "organizations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "password_reset_tokens" ADD CONSTRAINT "fk_password_reset_tokens_user" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "refresh_tokens" ADD CONSTRAINT "refresh_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_role_id_roles_id_fk" FOREIGN KEY ("role_id") REFERENCES "public"."roles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_permission_id_permissions_id_fk" FOREIGN KEY ("permission_id") REFERENCES "public"."permissions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -313,10 +341,18 @@ CREATE UNIQUE INDEX "uk_idempotency_keys_app_id_key" ON "idempotency_keys" USING
 CREATE INDEX "idx_idempotency_keys_expires_at" ON "idempotency_keys" USING btree ("expires_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "uk_inbox_source_message_id" ON "inbox" USING btree ("source","message_id");--> statement-breakpoint
 CREATE INDEX "idx_inbox_status_created_at" ON "inbox" USING btree ("status","created_at");--> statement-breakpoint
+CREATE UNIQUE INDEX "uk_organization_members_org_user" ON "organization_members" USING btree ("organization_id","user_id");--> statement-breakpoint
+CREATE INDEX "idx_organization_members_org_id" ON "organization_members" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "idx_organization_members_user_id" ON "organization_members" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "idx_organization_members_status" ON "organization_members" USING btree ("status");--> statement-breakpoint
 CREATE INDEX "idx_organizations_slug" ON "organizations" USING btree ("slug");--> statement-breakpoint
 CREATE INDEX "idx_organizations_user_id" ON "organizations" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "idx_outbox_status_created_at" ON "outbox" USING btree ("status","created_at");--> statement-breakpoint
 CREATE INDEX "idx_outbox_aggregate_id" ON "outbox" USING btree ("aggregate_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "uk_password_reset_tokens_token_hash" ON "password_reset_tokens" USING btree ("token_hash");--> statement-breakpoint
+CREATE INDEX "idx_password_reset_tokens_user_id" ON "password_reset_tokens" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "idx_password_reset_tokens_expires_at" ON "password_reset_tokens" USING btree ("expires_at");--> statement-breakpoint
+CREATE INDEX "idx_password_reset_tokens_user_id_enabled" ON "password_reset_tokens" USING btree ("user_id","enabled");--> statement-breakpoint
 CREATE INDEX "idx_permissions_resource_action" ON "permissions" USING btree ("resource","action");--> statement-breakpoint
 CREATE INDEX "idx_permissions_is_active" ON "permissions" USING btree ("is_active");--> statement-breakpoint
 CREATE UNIQUE INDEX "uk_refresh_tokens_token_hash" ON "refresh_tokens" USING btree ("token_hash");--> statement-breakpoint
