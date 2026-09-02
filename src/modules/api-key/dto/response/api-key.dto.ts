@@ -7,14 +7,13 @@ export class ApiKeyDto extends BaseDto {
   name: string;
   keyPrefix?: string | null;
   keyLastChars?: string | null;
-  scopes: string[];
+  metadata?: Record<string, any> | null;
+
   environment: ApiKeyEnvironmentEnum;
-  allowedIps?: string[] | null;
-  rateLimitOverride?: number | null;
-  lastUsedAt?: Date | null;
-  lastUsedIp?: string | null;
+
+  lastUsedAt: Date | null;
+
+  expiresAt: Date | null;
+
   enabled: boolean;
-  expiresAt?: Date | null;
-  revokedAt?: Date | null;
-  revokedReason?: string | null;
 }

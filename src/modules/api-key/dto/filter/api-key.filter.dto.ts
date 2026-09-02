@@ -3,7 +3,7 @@ import { IsBoolean, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator
 import { BaseFilter } from 'src/common/base/filter/filter.base';
 import { ApiKeyEnvironmentEnum } from 'src/common/enums/apiKeys/api-keys.enums';
 
-export class ApiKeyFilter extends BaseFilter {
+export class ApiKeyFilterDto extends BaseFilter {
   @IsOptional()
   @IsUUID('4', { message: 'Application ID must be a valid UUID' })
   applicationId?: string;
