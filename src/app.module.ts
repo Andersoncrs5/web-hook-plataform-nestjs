@@ -14,6 +14,8 @@ import { BootstrapModule } from './bootstrap/bootstrap.module';
 import { validateEnv } from './config/env';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { ApplicationModule } from './modules/application/application.module'; // <-- IMPORTANTE
+import { ApiKeyModule } from './modules/api-key/api-key.module';
+import { OrganizationMembersModule } from './modules/organization-members/organization-members.module';
 
 @Module({
   imports: [
@@ -22,7 +24,7 @@ import { ApplicationModule } from './modules/application/application.module'; //
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
-      validate: validateEnv
+      validate: validateEnv,
     }),
     ConfigModule,
     UserModule,
@@ -33,11 +35,11 @@ import { ApplicationModule } from './modules/application/application.module'; //
     UserRoleModule,
     BootstrapModule,
     OrganizationsModule,
-    ApplicationModule
+    ApplicationModule,
+    ApiKeyModule,
+    OrganizationMembersModule,
   ],
   controllers: [AppController],
-  providers: [
-    AppService
-  ],
+  providers: [AppService],
 })
 export class AppModule {}
