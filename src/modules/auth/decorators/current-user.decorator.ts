@@ -2,13 +2,26 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { Payload } from '../classes/payload.class';
 
 export const CurrentUser = createParamDecorator(
-    (data: keyof Payload | undefined, ctx: ExecutionContext) => {
-        const request = ctx.switchToHttp().getRequest();
+  (
+    data: keyof Payload | undefined,
+    ctx: ExecutionContext,
+  ): Payload | Payload[keyof Payload] | undefined => {
+    let request: any;
 
-        const user = request.user as Payload;
+    if (ctx.getType() === 'http') {
+      request = ctx.switchToHttp().getRequest();
+    } else if ((ctx.getType() as string) === 'graphql') {
+      request = ctx.getArgs()[2]?.req;
+    } else {
+      request = ctx.switchToHttp().getRequest();
+    }
 
-        if (!user) return null;
+    const user = request?.user as Payload | undefined;
 
-        return data ? user[data] : user;
-    },
+    if (!user) {
+      return undefined;
+    }
+
+    return data ? user[data] : user;
+  },
 );
