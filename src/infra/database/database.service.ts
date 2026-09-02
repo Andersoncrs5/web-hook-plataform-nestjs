@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { createDatabase } from './drizzle';
+import { transactionStorage } from '../interceptors/transaction/transaction.storage';
 
 @Injectable()
 export class DatabaseService {
@@ -20,6 +21,11 @@ export class DatabaseService {
   }
 
   get connection() {
+    const tx = transactionStorage.getStore();
+    return tx ?? this.database;
+  }
+
+  get rawPool() {
     return this.database;
   }
 }
