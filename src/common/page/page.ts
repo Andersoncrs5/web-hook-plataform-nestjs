@@ -24,6 +24,13 @@ export class Pageable<T> {
   @IsOptional()
   @IsEnum(SortDirection)
   direction = SortDirection.DESC;
+
+  constructor(page?: number, size?: number, sortBy?: T, direction?: SortDirection) {
+    if (page !== undefined) this.page = page;
+    if (size !== undefined) this.size = size;
+    if (sortBy !== undefined) this.sortBy = sortBy;
+    if (direction !== undefined) this.direction = direction;
+  }
 }
 
 export class Page<T> {
