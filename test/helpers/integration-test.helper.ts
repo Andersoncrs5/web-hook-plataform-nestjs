@@ -39,6 +39,8 @@ import { ApplicationDto } from 'src/modules/application/dto/response/application
 import { ApiKeyRepository } from 'src/modules/api-key/repository/api-key.repository';
 import { ApiKeyEntity } from 'src/modules/api-key/entities/api-key.entity';
 import { ApiKeyEnvironmentEnum } from 'src/common/enums/apiKeys/api-keys.enums';
+import { CreateApiKeyDto } from 'src/modules/api-key/dto/request/create-api-key.dto';
+import { ApiKeyDto } from 'src/modules/api-key/dto/response/api-key.dto';
 
 export class BaseTestHelper {
   readonly userRepository: UserRepository;
@@ -59,6 +61,40 @@ export class BaseTestHelper {
     this.organizationRepository = app.get(OrganizationRepository);
     this.applicationRepository = app.get(ApplicationRepository);
     this.apiKeyRepository = app.get(ApiKeyRepository);
+  }
+  async createApiKeyHTTP(
+    applicationId: string,
+    token: string,
+    override: Partial<CreateApiKeyDto> = {},
+  ): Promise<{ apiKey: ApiKeyDto; key: string }> {
+    const idempotencyKey = randomUUID();
+    const pathMain = '/v1/api-key';
+
+    const dto: CreateApiKeyDto = {
+      applicationId: applicationId,
+      name: 'any name' + this.getRandomString(12),
+      enabled: true,
+      environment: ApiKeyEnvironmentEnum.LIVE,
+      ...override,
+    };
+
+    const res = await request(this.app.getHttpServer())
+      .post(`${pathMain}`)
+      .send(dto)
+      .set('x-idempotency-key', idempotencyKey)
+      .set('Authorization', `Bearer ${token}`);
+
+    const response = res.body as ResponseHTTP<{ apiKey: ApiKeyDto; key: string }>;
+
+    expect(res.status).toBe(HttpStatus.CREATED);
+    expect(response.traceId).toBe(idempotencyKey);
+    expect(response.status).toBe(true);
+    expect(response.body).toBeDefined();
+    expect(response.body.apiKey.applicationId).toBe(applicationId);
+    expect(response.body.apiKey.name).toBe(dto.name);
+    expect(response.body.apiKey.environment).toBe(dto.environment);
+
+    return response.body;
   }
 
   async createFakeApiKey(
