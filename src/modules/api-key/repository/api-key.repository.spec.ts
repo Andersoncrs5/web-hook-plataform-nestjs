@@ -6,7 +6,7 @@ import { BaseTestHelper } from '../../../../test/helpers/integration-test.helper
 import { ApiKeyRepository } from './api-key.repository';
 import { Pageable, SortDirection } from 'src/common/page/page';
 
-import { ApiKeyFilter } from '../dto/filter/api-key.filter.dto';
+import { ApiKeyFilterDto } from '../dto/filter/api-key.filter.dto';
 import { ApiKeySort } from '../dto/filter/api-key-sort.dto';
 
 import { ApiKeyEnvironmentEnum } from 'src/common/enums/apiKeys/api-keys.enums';
@@ -34,6 +34,96 @@ describe('ApiKeyRepository (Integration Test)', () => {
 
   beforeEach(async () => {
     await helper.apiKeyRepository.deleteAll();
+  });
+
+  // =========================================================
+  // COUNT BY APPLICATION ID
+  // =========================================================
+
+  describe('countByApplicationId', () => {
+    it('should return the correct count of active api keys for a given application', async () => {
+      const application = await helper.createFakeApplication();
+
+      await helper.createFakeApiKey(application.createdBy!, application.id);
+      await helper.createFakeApiKey(application.createdBy!, application.id);
+
+      const count = await repository.countByApplicationId(application.id);
+
+      expect(count).toBe(2);
+    });
+
+    it('should return 0 when the application has no api keys', async () => {
+      const application = await helper.createFakeApplication();
+
+      const count = await repository.countByApplicationId(application.id);
+
+      expect(count).toBe(0);
+    });
+
+    it('should not include deleted api keys in the count', async () => {
+      const application = await helper.createFakeApplication();
+
+      const apiKey1 = await helper.createFakeApiKey(application.createdBy!, application.id);
+      const apiKey2 = await helper.createFakeApiKey(application.createdBy!, application.id);
+
+      await repository.deleteById(apiKey1.id);
+
+      const count = await repository.countByApplicationId(application.id);
+
+      expect(count).toBe(1);
+    });
+
+    it('should only count api keys belonging to the specified application', async () => {
+      const application1 = await helper.createFakeApplication();
+      const application2 = await helper.createFakeApplication();
+
+      await helper.createFakeApiKey(application1.createdBy!, application1.id);
+      await helper.createFakeApiKey(application2.createdBy!, application2.id);
+
+      const countApp1 = await repository.countByApplicationId(application1.id);
+      const countApp2 = await repository.countByApplicationId(application2.id);
+
+      expect(countApp1).toBe(1);
+      expect(countApp2).toBe(1);
+    });
+  });
+
+  // =========================================================
+  // FIND BY KEY HASH
+  // =========================================================
+
+  describe('findByKeyHash', () => {
+    it('should return the api key entity when matching keyHash exists', async () => {
+      const application = await helper.createFakeApplication();
+      const createdKey = await helper.createFakeApiKey(application.createdBy!, application.id);
+
+      const result = await repository.findByKeyHash(createdKey.keyHash);
+
+      expect(result).toBeDefined();
+      expect(result).not.toBeNull();
+      expect(result?.id).toBe(createdKey.id);
+      expect(result?.keyHash).toBe(createdKey.keyHash);
+      expect(result?.applicationId).toBe(application.id);
+    });
+
+    it('should return null when keyHash does not exist', async () => {
+      const nonExistentKeyHash = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+
+      const result = await repository.findByKeyHash(nonExistentKeyHash);
+
+      expect(result).toBeNull();
+    });
+
+    it('should return null if the api key with matching keyHash is soft-deleted', async () => {
+      const application = await helper.createFakeApplication();
+      const createdKey = await helper.createFakeApiKey(application.createdBy!, application.id);
+
+      await repository.deleteById(createdKey.id);
+
+      const result = await repository.findByKeyHash(createdKey.keyHash);
+
+      expect(result).toBeNull();
+    });
   });
 
   // =========================================================
@@ -118,7 +208,7 @@ describe('ApiKeyRepository (Integration Test)', () => {
 
       const apiKey2 = await helper.createFakeApiKey(application2.createdBy!, application2.id);
 
-      const page = await repository.findAll({} as ApiKeyFilter, {
+      const page = await repository.findAll({} as ApiKeyFilterDto, {
         page: 1,
         size: 10,
         sortBy: ApiKeySort.CREATED_AT,
@@ -149,7 +239,7 @@ describe('ApiKeyRepository (Integration Test)', () => {
       const page = await repository.findAll(
         {
           id: apiKey1.id,
-        } as ApiKeyFilter,
+        } as ApiKeyFilterDto,
         {
           page: 1,
           size: 10,
@@ -181,7 +271,7 @@ describe('ApiKeyRepository (Integration Test)', () => {
       const page = await repository.findAll(
         {
           applicationId: application.id,
-        } as ApiKeyFilter,
+        } as ApiKeyFilterDto,
         {
           page: 1,
           size: 10,
@@ -215,7 +305,7 @@ describe('ApiKeyRepository (Integration Test)', () => {
       const page = await repository.findAll(
         {
           name: name.toUpperCase(),
-        } as ApiKeyFilter,
+        } as ApiKeyFilterDto,
         {
           page: 1,
           size: 10,
@@ -247,7 +337,7 @@ describe('ApiKeyRepository (Integration Test)', () => {
       const page = await repository.findAll(
         {
           environment: [ApiKeyEnvironmentEnum.TEST],
-        } as ApiKeyFilter,
+        } as ApiKeyFilterDto,
         {
           page: 1,
           size: 10,
@@ -280,7 +370,7 @@ describe('ApiKeyRepository (Integration Test)', () => {
       const page = await repository.findAll(
         {
           enabled: false,
-        } as ApiKeyFilter,
+        } as ApiKeyFilterDto,
         {
           page: 1,
           size: 10,
@@ -314,7 +404,7 @@ describe('ApiKeyRepository (Integration Test)', () => {
       const page = await repository.findAll(
         {
           version: 1,
-        } as ApiKeyFilter,
+        } as ApiKeyFilterDto,
         {
           page: 1,
           size: 10,
@@ -345,7 +435,7 @@ describe('ApiKeyRepository (Integration Test)', () => {
         {
           createdAtMin: new Date('2026-01-01T00:00:00.000Z'),
           createdAtMax: new Date('2026-12-31T23:59:59.999Z'),
-        } as ApiKeyFilter,
+        } as ApiKeyFilterDto,
         {
           page: 1,
           size: 10,
@@ -371,7 +461,7 @@ describe('ApiKeyRepository (Integration Test)', () => {
 
       const apiKey3 = await helper.createFakeApiKey(application.createdBy!, application.id);
 
-      const page = await repository.findAll({} as ApiKeyFilter, {
+      const page = await repository.findAll({} as ApiKeyFilterDto, {
         page: 1,
         size: 2,
         sortBy: ApiKeySort.CREATED_AT,
@@ -392,7 +482,7 @@ describe('ApiKeyRepository (Integration Test)', () => {
       const page = await repository.findAll(
         {
           name: `does-not-exist-${helper.getRandomString(12)}`,
-        } as ApiKeyFilter,
+        } as ApiKeyFilterDto,
         {
           page: 1,
           size: 10,
@@ -419,7 +509,7 @@ describe('ApiKeyRepository (Integration Test)', () => {
         name: `ZZZ_${helper.getRandomString(8)}`,
       });
 
-      const page = await repository.findAll({} as ApiKeyFilter, {
+      const page = await repository.findAll({} as ApiKeyFilterDto, {
         page: 1,
         size: 10,
         sortBy: ApiKeySort.NAME,
@@ -448,7 +538,7 @@ describe('ApiKeyRepository (Integration Test)', () => {
         name: `ZZZ_${helper.getRandomString(8)}`,
       });
 
-      const page = await repository.findAll({} as ApiKeyFilter, {
+      const page = await repository.findAll({} as ApiKeyFilterDto, {
         page: 1,
         size: 10,
         sortBy: ApiKeySort.NAME,
@@ -478,7 +568,7 @@ describe('ApiKeyRepository (Integration Test)', () => {
         createdAt: new Date('2026-07-01T00:00:00.000Z'),
       });
 
-      const ascPage = await repository.findAll({} as ApiKeyFilter, {
+      const ascPage = await repository.findAll({} as ApiKeyFilterDto, {
         page: 1,
         size: 10,
         sortBy: ApiKeySort.CREATED_AT,
@@ -491,7 +581,7 @@ describe('ApiKeyRepository (Integration Test)', () => {
 
       expect(ascOlder).toBeLessThan(ascNewer);
 
-      const descPage = await repository.findAll({} as ApiKeyFilter, {
+      const descPage = await repository.findAll({} as ApiKeyFilterDto, {
         page: 1,
         size: 10,
         sortBy: ApiKeySort.CREATED_AT,

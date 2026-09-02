@@ -9,7 +9,7 @@ import { apiKeys } from 'src/infra/database/schema/api.keys.schema';
 import { eqIgnoreCase } from 'src/common/repository/custom.query';
 import { Pageable, Page, SortDirection } from 'src/common/page/page';
 import { ApiKeySort } from '../dto/filter/api-key-sort.dto';
-import { ApiKeyFilter } from '../dto/filter/api-key.filter.dto';
+import { ApiKeyFilterDto } from '../dto/filter/api-key.filter.dto';
 
 @Injectable()
 export class ApiKeyRepository
@@ -20,7 +20,48 @@ export class ApiKeyRepository
     super(database, apiKeys, ApiKeyMapper.toDomain, ApiKeyMapper.toPersistence);
   }
 
-  async findAll(filter: ApiKeyFilter, pageable: Pageable<ApiKeySort>): Promise<Page<ApiKeyEntity>> {
+  async findByKeyHash(keyHash: string): Promise<ApiKeyEntity | null> {
+    const [result] = await this.database.connection
+      .select({
+        id: apiKeys.id,
+        applicationId: apiKeys.applicationId,
+        createdBy: apiKeys.createdBy,
+        name: apiKeys.name,
+        keyHash: apiKeys.keyHash,
+        keyPrefix: apiKeys.keyPrefix,
+        keyLastChars: apiKeys.keyLastChars,
+        metadata: apiKeys.metadata,
+        environment: apiKeys.environment,
+        lastUsedAt: apiKeys.lastUsedAt,
+        expiresAt: apiKeys.expiresAt,
+        enabled: apiKeys.enabled,
+        version: apiKeys.version,
+        createdAt: apiKeys.createdAt,
+        updatedAt: apiKeys.updatedAt,
+        deletedAt: apiKeys.deletedAt,
+      })
+      .from(apiKeys)
+      .where(and(eq(apiKeys.keyHash, keyHash), isNull(apiKeys.deletedAt)))
+      .limit(1);
+
+    return result ? ApiKeyMapper.toDomain(result) : null;
+  }
+
+  async countByApplicationId(applicationId: string): Promise<number> {
+    const [result] = await this.database.connection
+      .select({
+        total: sql<number>`COUNT(*)::int`,
+      })
+      .from(apiKeys)
+      .where(and(eq(apiKeys.applicationId, applicationId), isNull(apiKeys.deletedAt)));
+
+    return result?.total ?? 0;
+  }
+
+  async findAll(
+    filter: ApiKeyFilterDto,
+    pageable: Pageable<ApiKeySort>,
+  ): Promise<Page<ApiKeyEntity>> {
     const page = pageable.page ?? 1;
     const size = pageable.size ?? 30;
     const offset = (page - 1) * size;
@@ -207,6 +248,22 @@ export class ApiKeyRepository
       .select({ id: apiKeys.id })
       .from(apiKeys)
       .where(and(eqIgnoreCase(apiKeys.name, name), isNull(apiKeys.deletedAt)))
+      .limit(1);
+
+    return existing !== undefined;
+  }
+
+  async existsByApplicationIdAndName(applicationId: string, name: string) {
+    const [existing] = await this.database.connection
+      .select({ id: apiKeys.id })
+      .from(apiKeys)
+      .where(
+        and(
+          eqIgnoreCase(apiKeys.name, name),
+          isNull(apiKeys.deletedAt),
+          eq(apiKeys.applicationId, applicationId),
+        ),
+      )
       .limit(1);
 
     return existing !== undefined;
