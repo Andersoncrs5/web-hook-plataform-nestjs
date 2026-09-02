@@ -1,5 +1,16 @@
 {
-    "singleQuote": true,
-    "semi": true,
-    "trailingComma": "all"
+  "singleQuote": true,
+  "semi": true,
+  "trailingComma": "all",
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "bracketSpacing": true,
+  "bracketSameLine": false,
+  "arrowParens": "always",
+  "endOfLine": "lf",
+  "quoteProps": "as-needed",
+  "proseWrap": "preserve",
+  "objectWrap": "preserve",
+  "plugins": ["prettier-plugin-sql", "prettier-plugin-yaml"]
 }
