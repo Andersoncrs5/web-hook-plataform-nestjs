@@ -1,17 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  SQL,
-  and,
-  asc,
-  desc,
-  eq,
-  gte,
-  ilike,
-  inArray,
-  isNull,
-  lte,
-  sql,
-} from 'drizzle-orm';
+import { SQL, and, asc, desc, eq, gte, ilike, inArray, isNull, lte, sql } from 'drizzle-orm';
 
 import { DatabaseService } from 'src/infra/database/database.service';
 import { applications } from 'src/infra/database/schema/applications.schema';
@@ -31,12 +19,7 @@ export class ApplicationRepository
   implements IApplicationRepository
 {
   constructor(database: DatabaseService) {
-    super(
-      database,
-      applications,
-      ApplicationMapper.toDomain,
-      ApplicationMapper.toPersistence,
-    );
+    super(database, applications, ApplicationMapper.toDomain, ApplicationMapper.toPersistence);
   }
 
   async findAll(
@@ -141,8 +124,7 @@ export class ApplicationRepository
 
     const sortColumn = sortableColumns[sortBy] ?? applications.createdAt;
 
-    const orderBy =
-      direction === SortDirection.ASC ? asc(sortColumn) : desc(sortColumn);
+    const orderBy = direction === SortDirection.ASC ? asc(sortColumn) : desc(sortColumn);
 
     /*
      * DATA
@@ -185,21 +167,27 @@ export class ApplicationRepository
 
     const totalElements = countResult?.totalElements ?? 0;
 
-    return new Page(
-      result.map(ApplicationMapper.toDomain),
-      page,
-      size,
-      totalElements,
-    );
+    return new Page(result.map(ApplicationMapper.toDomain), page, size, totalElements);
   }
 
   async existsByName(name: string): Promise<boolean> {
     const [existing] = await this.database.connection
       .select({ id: applications.id })
       .from(applications)
+      .where(and(eqIgnoreCase(applications.name, name), isNull(applications.deletedAt)))
+      .limit(1);
+
+    return existing !== undefined;
+  }
+
+  async isOwner(applicationId: string, userId: string): Promise<boolean> {
+    const [existing] = await this.database.connection
+      .select({ id: applications.id })
+      .from(applications)
       .where(
         and(
-          eqIgnoreCase(applications.name, name),
+          eq(applications.id, applicationId),
+          eq(applications.createdBy, userId),
           isNull(applications.deletedAt),
         ),
       )
@@ -212,12 +200,7 @@ export class ApplicationRepository
     const [existing] = await this.database.connection
       .select({ id: applications.id })
       .from(applications)
-      .where(
-        and(
-          eqIgnoreCase(applications.slug, slug),
-          isNull(applications.deletedAt),
-        ),
-      )
+      .where(and(eqIgnoreCase(applications.slug, slug), isNull(applications.deletedAt)))
       .limit(1);
 
     return existing !== undefined;
