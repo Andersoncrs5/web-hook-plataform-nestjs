@@ -1,6 +1,12 @@
 import { pgTable, uuid, index, uniqueIndex, foreignKey, pgEnum } from 'drizzle-orm/pg-core';
 
-import { idPattern, createdAtPattern, updatedAtPattern } from '../schema-helpers';
+import {
+  idPattern,
+  createdAtPattern,
+  updatedAtPattern,
+  deletedAtPattern,
+  versionPattern,
+} from '../schema-helpers';
 
 import { users } from './user.schema';
 import { organizations } from './organization.schema';
@@ -28,8 +34,10 @@ export const organizationMembers = pgTable(
       .default(OrganizationMemberStatusEnum.ACTIVE)
       .notNull(),
 
+    ...versionPattern,
     ...createdAtPattern,
     ...updatedAtPattern,
+    ...deletedAtPattern,
   },
   (table) => [
     foreignKey({
