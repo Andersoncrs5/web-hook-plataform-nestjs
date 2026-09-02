@@ -37,6 +37,10 @@ export class Page<T> {
   get totalPages(): number {
     return Math.ceil(this.totalElements / this.size);
   }
+
+  map<U>(mapper: (item: T) => U): Page<U> {
+    return new Page(this.content.map(mapper), this.page, this.size, this.totalElements);
+  }
 }
 
 export function normalizePageable<T>(pageable: Pageable<T>, defaultSort: T): Required<Pageable<T>> {
